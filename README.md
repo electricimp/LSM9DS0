@@ -11,7 +11,7 @@ The LSM9DS0 has two separate I2C Student addresses: one for the Gyroscope and on
 
 ## Usage
 
-#### constructor(i2cBus, [enableAll], [i2cAccelAddress], [i2cGyroAddress])
+## constructor(i2cBus, [enableAll], [i2cAccelAddress], [i2cGyroAddress])
 The constructor takes one required parameter, and three optional parameters:
 
 | Parameter     | Type         | Default | Description |

@@ -1,5 +1,4 @@
-Driver for the LSM9DS0 Inertial Measurement Unit
-===================================
+# Driver for the LSM9DS0 Inertial Measurement Unit
 
 Author: [Tom Byrne](https://github.com/ersatzavian/)
 
@@ -9,7 +8,7 @@ The LSM9DS0 can interface over I&sup2;C or SPI. This class addresses only I&sup2
 
 The LSM9DS0 has two separate I&sup2;C sub-addresses: one for the gyroscope and one for the accelerometer/magnetometer. All three functional blocks can be enabled or disabled separately.
 
-## Usage
+## Class Usage
 
 ### Constructor
 

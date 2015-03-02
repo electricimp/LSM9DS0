@@ -30,7 +30,7 @@ imu <- LSM9DS0(i2c)
 
 ### Functions
 
-### enableTemp(state)
+### enableTemp(*state*)
 
 Enables (*state* = 1) or disables (*state* = 0) the temperature sensor inside the LSM9DS0.
 
@@ -38,7 +38,7 @@ Enables (*state* = 1) or disables (*state* = 0) the temperature sensor inside th
 imu.enableTemp(1)    // Enable temperature sensor
 ```
 
-### enableAccel(state)
+### enableAccel(*state*)
 
 Enables (*state* = 1) or disables (*state* = 0) the LSM9DS0’s accelerometer.
 
@@ -46,7 +46,7 @@ Enables (*state* = 1) or disables (*state* = 0) the LSM9DS0’s accelerometer.
 imu.enableAccel(0)    // Disable accelerometer
 ```
 
-### enableGyro(state)
+### enableGyro(*state*)
 
 Enables (*state* = 1) or disables (*state* = 0) the LSM9DS0’s gyroscope.
 
@@ -54,7 +54,7 @@ Enables (*state* = 1) or disables (*state* = 0) the LSM9DS0’s gyroscope.
 imu.enableGyro(0)    // Disable gyroscope
 ```
 
-### enableMag(state)
+### enableMag(*state*)
 
 Enables (*state* = 1) or disables (*state* = 0) the LSM9DS0’s magnetometer.
 

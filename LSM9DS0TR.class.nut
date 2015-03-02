@@ -55,6 +55,7 @@ class LSM9DS0TR {
 
         _temp_enabled = false;
 
+        imp.sleep(0.01);
         if (enableAll) {
             enableGyro(1);
             enableAccel(1);
@@ -94,7 +95,7 @@ class LSM9DS0TR {
     function enableAccel(state) {
         local val = _i2c.read(_xm_addr, format("%c",CTRL_REG1_XM), 1)[0] & 0x0F;
 
-        if (state == true) val = val | 0x10;
+        if (state == 1) val = val | 0x10;
         _i2c.write(_xm_addr, format("%c%c",CTRL_REG1_XM, val));
     }
 
@@ -239,4 +240,3 @@ class LSM9DS0TR {
         _i2c.write(addr, format("%c%c", reg, val));
     }
 }
-

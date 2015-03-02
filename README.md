@@ -32,7 +32,7 @@ imu <- LSM9DS0(i2c)
 
 ### enableTemp(state)
 
-Enables (*state* = 1) or disables (*state* = 0) the temperature sensor inside the IC.
+Enables (*state* = 1) or disables (*state* = 0) the temperature sensor inside the LSM9DS0.
 
 ```
 imu.enableTemp(1)    // Enable temperature sensor
@@ -40,7 +40,7 @@ imu.enableTemp(1)    // Enable temperature sensor
 
 ### enableAccel(state)
 
-Enables (*state* = 1) or disables (*state* = 0) the accelerometer inside the IC.
+Enables (*state* = 1) or disables (*state* = 0) the LSM9DS0’s accelerometer.
 
 ```
 imu.enableAccel(0)    // Disable accelerometer
@@ -48,7 +48,7 @@ imu.enableAccel(0)    // Disable accelerometer
 
 ### enableGyro(state)
 
-Enables (*state* = 1) or disables (*state* = 0) the gyroscope inside the IC.
+Enables (*state* = 1) or disables (*state* = 0) the LSM9DS0’s gyroscope.
 
 ```
 imu.enableGyro(0)    // Disable gyroscope
@@ -56,7 +56,7 @@ imu.enableGyro(0)    // Disable gyroscope
 
 ### enableMag(state)
 
-Enables (*state* = 1) or disables (*state* = 0) the magnetometer inside the IC.
+Enables (*state* = 1) or disables (*state* = 0) the LSM9DS0’s magnetometer.
 
 ```
 imu.enableMag(1)    // Enable magnetometer

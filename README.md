@@ -27,7 +27,7 @@ i2c <- hardware.i2c89.configure(CLOCK_SPEED_400_KHZ)
 imu <- LSM9DS0(i2c)
 ```
 
-### Functions
+### Class Methods
 
 ### enableTemp(*state*)
 

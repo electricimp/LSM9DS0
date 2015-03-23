@@ -108,16 +108,6 @@ class LSM9DS0 {
     
     // -------------------------------------------------------------------------
     function init() {
-        //softReset();
-        
-        // read interrupt sources to clear any latched interrupts
-        getIntSrc_G();
-        getIntSrc_M();
-        getInt1Src_XM();
-        getInt2Src_XM();
-        
-        // disable data ready interrupt since that apparently doesn't reset with a mem reboot
-        setIntDrdy_G(0);
     }
     
     // -------------------------------------------------------------------------
@@ -127,43 +117,50 @@ class LSM9DS0 {
     }
     
     // -------------------------------------------------------------------------
+    function _getReg(addr, reg) {
+        local val = _i2c.read(addr, format("%c", reg), 1);
+        if (val != null) {
+            return val[0];
+        } else {
+            return null;
+        }
+    }
+    
+    // -------------------------------------------------------------------------
+    function _setReg(addr, reg, val) {
+        _i2c.write(addr, format("%c%c", reg, (val & 0xff)));   
+    }
+    
+    // -------------------------------------------------------------------------
     function _setRegBit(addr, reg, bit, state) {
-        local val = _i2c.read(addr, format("%c",reg), 1)[0];
+        local val = _getReg(addr, reg);
         if (state == 0) {
             val = val & ~(0x01 << bit);
         } else {
             val = val | (0x01 << bit);
         }
-        _i2c.write(addr, format("%c%c", reg, val));
-    }
-    
-    // -------------------------------------------------------------------------
-    function softReset() {
-        // reboot gyro
-        _setRegBit(_g_addr, CTRL_REG5_G, 7, 1);
-        // reboot accel / mag
-        _setRegBit(_xm_addr, CTRL_REG0_XM, 7, 1);
+        _setReg(addr, reg, val);
     }
     
     function dumpCtrlRegs() {
-        server.log(format("CTRL_REG0: 0x%02X", _i2c.read(_xm_addr, format("%c",CTRL_REG0_XM), 1)[0]));
-        server.log(format("CTRL_REG1: 0x%02X", _i2c.read(_xm_addr, format("%c",CTRL_REG1_XM), 1)[0]));
-        server.log(format("CTRL_REG2: 0x%02X", _i2c.read(_xm_addr, format("%c",CTRL_REG2_XM), 1)[0]));
-        server.log(format("CTRL_REG3: 0x%02X", _i2c.read(_xm_addr, format("%c",CTRL_REG3_XM), 1)[0]));
-        server.log(format("CTRL_REG4: 0x%02X", _i2c.read(_xm_addr, format("%c",CTRL_REG4_XM), 1)[0]));
-        server.log(format("CTRL_REG5: 0x%02X", _i2c.read(_xm_addr, format("%c",CTRL_REG5_XM), 1)[0]));
-        server.log(format("CTRL_REG6: 0x%02X", _i2c.read(_xm_addr, format("%c",CTRL_REG6_XM), 1)[0]));
-        server.log(format("CTRL_REG7: 0x%02X", _i2c.read(_xm_addr, format("%c",CTRL_REG7_XM), 1)[0]));
-        server.log(format("INT_CTRL_REG_M: 0x%02X", _i2c.read(_xm_addr, format("%c",INT_CTRL_REG_M), 1)[0]));
-        server.log(format("INT_GEN_1_REG: 0x%02X", _i2c.read(_xm_addr, format("%c",INT_GEN_1_REG), 1)[0]));
-        server.log(format("INT_GEN_1_THS: 0x%02X", _i2c.read(_xm_addr, format("%c",INT_GEN_1_THS), 1)[0]));
-        server.log(format("INT_GEN_1_DURATION: 0x%02X", _i2c.read(_xm_addr, format("%c",INT_GEN_1_DURATION), 1)[0]));
+        server.log(format("CTRL_REG0: 0x%02X", _getReg(_xm_addr, CTRL_REG0_XM)));
+        server.log(format("CTRL_REG1: 0x%02X", _getReg(_xm_addr, CTRL_REG1_XM)));
+        server.log(format("CTRL_REG2: 0x%02X", _getReg(_xm_addr, CTRL_REG2_XM)));
+        server.log(format("CTRL_REG3: 0x%02X", _getReg(_xm_addr, CTRL_REG3_XM)));
+        server.log(format("CTRL_REG4: 0x%02X", _getReg(_xm_addr, CTRL_REG4_XM)));
+        server.log(format("CTRL_REG5: 0x%02X", _getReg(_xm_addr, CTRL_REG5_XM)));
+        server.log(format("CTRL_REG6: 0x%02X", _getReg(_xm_addr, CTRL_REG6_XM)));
+        server.log(format("CTRL_REG7: 0x%02X", _getReg(_xm_addr, CTRL_REG7_XM)));
+        server.log(format("INT_CTRL_REG_M: 0x%02X", _getReg(_xm_addr, INT_CTRL_REG_M)));
+        server.log(format("INT_GEN_1_REG: 0x%02X", _getReg(_xm_addr, INT_GEN_1_REG)));
+        server.log(format("INT_GEN_1_THS: 0x%02X", _getReg(_xm_addr, INT_GEN_1_THS)));
+        server.log(format("INT_GEN_1_DURATION: 0x%02X", _getReg(_xm_addr, INT_GEN_1_DURATION)));
     }
     
     // -------------------------------------------------------------------------
     // Return Gyro Device ID (0xD4)
     function getDeviceId_G() {
-        return _i2c.read(_g_addr, format("%c",WHO_AM_I_G), 1)[0];
+        return _getReg(_g_addr, WHO_AM_I_G);
     }
     
     // -------------------------------------------------------------------------
@@ -277,24 +274,24 @@ class LSM9DS0 {
     // -------------------------------------------------------------------------
     // set the gyro threshold values for interrupt
     function setIntThs_G(x_ths, y_ths, z_ths) {
-        _i2c.write(_g_addr, format("%c%c", INT1_THS_XH_G, (x_ths & 0xff00) >> 8));
-        _i2c.write(_g_addr, format("%c%c", INT1_THS_XL_G, (x_ths & 0xff)));
-        _i2c.write(_g_addr, format("%c%c", INT1_THS_YH_G, (y_ths & 0xff00) >> 8));
-        _i2c.write(_g_addr, format("%c%c", INT1_THS_YL_G, (y_ths & 0xff)));
-        _i2c.write(_g_addr, format("%c%c", INT1_THS_ZH_G, (z_ths & 0xff00) >> 8));
-        _i2c.write(_g_addr, format("%c%c", INT1_THS_ZL_G, (z_ths & 0xff)));
+        _setReg(_g_addr, INT1_THS_XH_G, (x_ths & 0xff00) >> 8);
+        _setReg(_g_addr, INT1_THS_XL_G, (x_ths & 0xff));
+        _setReg(_g_addr, INT1_THS_YH_G, (y_ths & 0xff00) >> 8);
+        _setReg(_g_addr, INT1_THS_YL_G, (y_ths & 0xff));
+        _setReg(_g_addr, INT1_THS_ZH_G, (z_ths & 0xff00) >> 8);
+        _setReg(_g_addr, INT1_THS_ZL_G, (z_ths & 0xff));
     }
     
     // -------------------------------------------------------------------------
     // set number of over-threshold samples to count before throwing interrupt
     function setIntDuration_G(nsamples) {
-        _i2c.write(_g_addr, format("%c%c", INT1_DURATION_G, nsamples & 0xff));
+        _setReg(_g_addr, INT1_DURATION_G, nsamples & 0xff);
     }
     
     // -------------------------------------------------------------------------
     // read the interrupt source register to determine what caused an interrupt
     function getIntSrc_G() {
-        return _i2c.read(_g_addr, format("%c",INT1_SRC_G), 1)[0];
+        return _getReg(_g_addr, INT1_SRC_G);
     }
     
     // -------------------------------------------------------------------------
@@ -312,41 +309,41 @@ class LSM9DS0 {
     // -------------------------------------------------------------------------
     // Returns Accel/Magnetometer Device ID (0x49)
     function getDeviceId_XM() {
-        return _i2c.read(_xm_addr, format("%c",WHO_AM_I_XM), 1)[0];
+        return _getReg(_xm_addr, WHO_AM_I_XM);
     }
     
     // -------------------------------------------------------------------------
     // read the magnetometer's status register
     function getStatus_M() {
-        return _i2c.read(_xm_addr, format("%c",STATUS_REG_M), 1)[0];
+        return _getReg(_xm_addr, STATUS_REG_M);
     }
     
     // -------------------------------------------------------------------------
     // Put magnetometer into continuous-conversion mode
     // IMU comes up with magnetometer powered down
     function setModeCont_M() {
-        local val = _i2c.read(_xm_addr, format("%c",CTRL_REG7_XM), 1)[0] & 0xFC;
+        local val = _getReg(_xm_addr, CTRL_REG7_XM) & 0xFC;
         // bits 1:0 determine mode
         // 0b00 -> continuous conversion mode
-        _i2c.write(_xm_addr, format("%c%c",CTRL_REG7_XM, val));
+        _setReg(_xm_addr, CTRL_REG7_XM, val);
     }
     
     // -------------------------------------------------------------------------
     // Put magnetometer into single-conversion mode
     function setModeSingle_M() {
-        local val = _i2c.read(_xm_addr, format("%c",CTRL_REG7_XM), 1)[0] & 0xFC;
+        local val = _getReg(_xm_addr, CTRL_REG7_XM) & 0xFC;
         // 0b01 -> single conversion mode
         val = val | 0x01;
-        _i2c.write(_xm_addr, format("%c%c",CTRL_REG7_XM, val));
+        _setReg(_xm_addr, CTRL_REG7_XM, val);
     }
     
     // -------------------------------------------------------------------------
     // Put magnetometer into power-down mode
     function setModePowerdown_M() {
-        local val = _i2c.read(_xm_addr, format("%c",CTRL_REG7_XM), 1)[0] & 0xFC;
+        local val = _getReg(_xm_addr, CTRL_REG7_XM) & 0xFC;
         // 0b10 or 0b11 -> power-down mode
         val = val | 0x20;
-        _i2c.write(_xm_addr, format("%c%c",CTRL_REG7_XM, val));
+        _setReg(_xm_addr, CTRL_REG7_XM, val);
     }
     
     // -------------------------------------------------------------------------
@@ -397,14 +394,14 @@ class LSM9DS0 {
     // -------------------------------------------------------------------------
     // read the interrupt source register to determine what caused an interrupt
     function getIntSrc_M() {
-        return _i2c.read(_xm_addr, format("%c",INT_SRC_REG_M), 1)[0];
+        return _getReg(xm_addr, INT_SRC_REG_M);
     }
     
     // -------------------------------------------------------------------------
     // set the absolute value of the magnetometer interrupt threshold for all axes
     function setIntThs_M(val) {
-        _i2c.write(_xm_addr, format("%c%c",INT_THS_H_M, (val & 0xff00) << 8));
-        _i2c.write(_xm_addr, format("%c%c",INT_THS_L_M, (val & 0xff)));
+        _setReg(_xm_addr, INT_THS_H_M, (val & 0xff00) << 8);
+        _setReg(_xm_addr, INT_THS_L_M, (val & 0xff));
     }
     
     // -------------------------------------------------------------------------
@@ -438,7 +435,7 @@ class LSM9DS0 {
     // Set Accelerometer Data Rate in Hz
     // IMU comes up with accelerometer disabled; rate must be set to enable
     function setDatarate_A(rate) {
-        local val = _i2c.read(_xm_addr, format("%c",CTRL_REG1_XM), 1)[0] & 0x0F;
+        local val = _getReg(_xm_addr, CTRL_REG1_XM) & 0x0F;
         if (rate == 0) {
             // 0b0000 -> power-down mode
             // we've already ANDed-out the top 4 bits; just write back
@@ -463,7 +460,7 @@ class LSM9DS0 {
         } else if (rate <= 1600) {
             val = val | 0xA0;
         }
-        _i2c.write(_xm_addr, format("%c%c",CTRL_REG1_XM, val));
+        _setReg(_xm_addr, CTRL_REG1_XM, val);
     }
     
     // -------------------------------------------------------------------------
@@ -488,7 +485,7 @@ class LSM9DS0 {
     // Set Magnetometer Data Rate in Hz
     // IMU comes up with magnetometer data rate set to 3.125 Hz
     function setDatarate_M(rate) {
-        local val = _i2c.read(_xm_addr, format("%c",CTRL_REG5_XM), 1)[0] & 0xE3;
+        local val = _getReg(_xm_addr, CTRL_REG5_XM) & 0xE3;
         if (rate <= 3.125) {
             // rate already set; 0x0
         } else if (rate <= 6.25) {
@@ -503,8 +500,7 @@ class LSM9DS0 {
             // rate = 100 Hz
             val = val | (0x05 << 3);
         } 
-        server.log(format("Writing 0x%02X to CTRL_REG5_XM",val));
-        _i2c.write(_xm_addr, format("%c%c",CTRL_REG5_XM, val));
+        _setReg(_xm_addr, CTRL_REG5_XM, val);
     }
     
     // -------------------------------------------------------------------------
@@ -623,17 +619,17 @@ class LSM9DS0 {
     // -------------------------------------------------------------------------
     // read the accelerometer's status register
     function getStatus_A() {
-        return _i2c.read(_xm_addr, format("%c",STATUS_REG_A), 1)[0];
+        return _getReg(_xm_addr, STATUS_REG_A);
     }    
     
     // -------------------------------------------------------------------------
     function getInt1Src_XM() {
-        return _i2c.read(_xm_addr, format("%c",INT_GEN_1_SRC), 1)[0];
+        return _getReg(_xm_addr, INT_GEN_1_SRC);
     }
     
     // -------------------------------------------------------------------------
     function getInt2Src_XM() {
-        return _i2c.read(_xm_addr, format("%c",INT_GEN_2_SRC), 1)[0];
+        return _getReg(_xm_addr, INT_GEN_2_SRC);
     }
     
     // -------------------------------------------------------------------------
@@ -675,14 +671,14 @@ class LSM9DS0 {
     // -------------------------------------------------------------------------
     // set the accelerometer threshold value interrupt 1
     function setInt1Ths_A(ths) {
-        _i2c.write(_xm_addr, format("%c%c", INT_GEN_1_THS, (ths & 0x7f)));
+        _setReg(_xm_addr,  INT_GEN_1_THS, (ths & 0x7f));
     }
     
     // -------------------------------------------------------------------------
     // set the event duration over threshold before throwing interrupt
     // duration steps and max values depend on selected ODR
     function setInt1Duration_A(duration) {
-        _i2c.write(_xm_addr, format("%c%c", INT_GEN_1_DURATION, duration & 0x7f));
+        _setReg(_xm_addr, INT_GEN_1_DURATION, duration & 0x7f);
     }
     
     // -------------------------------------------------------------------------
@@ -724,14 +720,14 @@ class LSM9DS0 {
     // -------------------------------------------------------------------------
     // set the accelerometer threshold value interrupt 2
     function setInt2Ths_A(ths) {
-        _i2c.write(_xm_addr, format("%c%c", INT_GEN_2_THS, (ths & 0x7f)));
+        _setReg(_xm_addr, INT_GEN_2_THS, (ths & 0x7f));
     }
     
     // -------------------------------------------------------------------------
     // set the event duration over threshold before throwing interrupt
     // duration steps and max values depend on selected ODR
     function setInt2Duration_A(duration) {
-        _i2c.write(_xm_addr, format("%c%c", INT_GEN_2_DURATION, duration & 0x7f));
+        _setReg(_xm_addr, INT_GEN_2_DURATION, duration & 0x7f);
     }
     
     // -------------------------------------------------------------------------
@@ -772,50 +768,50 @@ class LSM9DS0 {
     
     // -------------------------------------------------------------------------
     function clickIntActive() {
-        return (0x40 & _i2c.read(_xm_addr, format("%c", CLICK_SRC), 1)[0]); 
+        return (0x40 & _getReg(_xm_addr, CLICK_SRC)); 
     }
     
     // -------------------------------------------------------------------------
     function dblclickDet() {
-        return (0x20 & _i2c.read(_xm_addr, format("%c", CLICK_SRC), 1)[0]); 
+        return (0x20 & _getReg(_xm_addr, CLICK_SRC)); 
     }
     
     // -------------------------------------------------------------------------
     function snglclickDet() {
-        return (0x10 & _i2c.read(_xm_addr, format("%c", CLICK_SRC), 1)[0]); 
+        return (0x10 & _getReg(_xm_addr, CLICK_SRC)); 
     }
     
     // -------------------------------------------------------------------------
     function clickNegDir() {
-        return (0x08 & _i2c.read(_xm_addr, format("%c", CLICK_SRC), 1)[0]); 
+        return (0x08 & _getReg(_xm_addr, CLICK_SRC)); 
     }
     
     // -------------------------------------------------------------------------
     function zclickDet() {
-        return (0x04 & _i2c.read(_xm_addr, format("%c", CLICK_SRC), 1)[0]); 
+        return (0x04 & _getReg(_xm_addr, CLICK_SRC)); 
     }
     
     // -------------------------------------------------------------------------
     function yclickDet() {
-        return (0x02 & _i2c.read(_xm_addr, format("%c", CLICK_SRC), 1)[0]); 
+        return (0x02 & _getReg(_xm_addr, CLICK_SRC)); 
     }
     
     // -------------------------------------------------------------------------
     function xclickDet() {
-        return (0x01 & _i2c.read(_xm_addr, format("%c", CLICK_SRC), 1)[0]); 
+        return (0x01 & _getReg(_xm_addr, CLICK_SRC)); 
     }
     
     // -------------------------------------------------------------------------
     // set the click detection threshold
     function setClickDetThs(ths) {
-        _i2c.write(_xm_addr, format("%c%c", CLICK_THS, (ths & 0x7f)));
+        _setReg(_xm_addr, CLICK_THS, (ths & 0x7f));
     }
     
     // -------------------------------------------------------------------------
     // read the internal temperature sensor in the accelerometer / magnetometer
     function getTemp() {
         if (!_temp_enabled) { setTempEn(1) };
-        local temp = (_i2c.read(_xm_addr, format("%c", OUT_TEMP_H_XM), 1)[0] << 8) + _i2c.read(_xm_addr, format("%c", OUT_TEMP_L_XM), 1)[0];
+        local temp = (_getReg(_xm_addr, OUT_TEMP_H_XM) << 8) + _getReg(_xm_addr, OUT_TEMP_L_XM);
         temp = temp & 0x0fff; // temp data is 12 bits, 2's comp, right-justified
         if (temp & 0x0800) {
             return (-1.0) * _twosComp(temp, 0x0fff);
@@ -828,9 +824,9 @@ class LSM9DS0 {
     // Read data from the Gyro
     // Returns a table {x: <data>, y: <data>, z: <data>}
     function getGyro() {
-        local x_raw = (_i2c.read(_g_addr, format("%c", OUT_X_H_G), 1)[0] << 8) + _i2c.read(_g_addr, format("%c", OUT_X_L_G), 1)[0];
-        local y_raw = (_i2c.read(_g_addr, format("%c", OUT_Y_H_G), 1)[0] << 8) + _i2c.read(_g_addr, format("%c", OUT_Y_L_G), 1)[0];
-        local z_raw = (_i2c.read(_g_addr, format("%c", OUT_Z_H_G), 1)[0] << 8) + _i2c.read(_g_addr, format("%c", OUT_Z_L_G), 1)[0];
+        local x_raw = (_getReg(_g_addr, OUT_X_H_G) << 8) + _getReg(_g_addr, OUT_X_L_G);
+        local y_raw = (_getReg(_g_addr, OUT_Y_H_G) << 8) + _getReg(_g_addr, OUT_Y_L_G);
+        local z_raw = (_getReg(_g_addr, OUT_Z_H_G) << 8) + _getReg(_g_addr, OUT_Z_L_G);
         
         local result = {};
         if (x_raw & 0x8000) {
@@ -858,9 +854,9 @@ class LSM9DS0 {
     // Read data from the Magnetometer
     // Returns a table {x: <data>, y: <data>, z: <data>}
     function getMag() {
-        local x_raw = (_i2c.read(_xm_addr, format("%c", OUT_X_H_M), 1)[0] << 8) + _i2c.read(_xm_addr, format("%c", OUT_X_L_M), 1)[0];
-        local y_raw = (_i2c.read(_xm_addr, format("%c", OUT_Y_H_M), 1)[0] << 8) + _i2c.read(_xm_addr, format("%c", OUT_Y_L_M), 1)[0];
-        local z_raw = (_i2c.read(_xm_addr, format("%c", OUT_Z_H_M), 1)[0] << 8) + _i2c.read(_xm_addr, format("%c", OUT_Z_L_M), 1)[0];
+        local x_raw = (_getReg(_xm_addr, OUT_X_H_M) << 8) + _getReg(_xm_addr, OUT_X_L_M);
+        local y_raw = (_getReg(_xm_addr, OUT_Y_H_M) << 8) + _getReg(_xm_addr, OUT_Y_L_M);
+        local z_raw = (_getReg(_xm_addr, OUT_Z_H_M) << 8) + _getReg(_xm_addr, OUT_Z_L_M);
     
         local result = {};
         if (x_raw & 0x8000) {
@@ -888,9 +884,9 @@ class LSM9DS0 {
     // Read data from the Accelerometer
     // Returns a table {x: <data>, y: <data>, z: <data>}
     function getAccel() {
-        local x_raw = (_i2c.read(_xm_addr, format("%c", OUT_X_H_A), 1)[0] << 8) + _i2c.read(_xm_addr, format("%c", OUT_X_L_A), 1)[0];
-        local y_raw = (_i2c.read(_xm_addr, format("%c", OUT_Y_H_A), 1)[0] << 8) + _i2c.read(_xm_addr, format("%c", OUT_Y_L_A), 1)[0];
-        local z_raw = (_i2c.read(_xm_addr, format("%c", OUT_Z_H_A), 1)[0] << 8) + _i2c.read(_xm_addr, format("%c", OUT_Z_L_A), 1)[0];
+        local x_raw = (_getReg(_xm_addr, OUT_X_H_A) << 8) + _getReg(_xm_addr, OUT_X_L_A);
+        local y_raw = (_getReg(_xm_addr, OUT_Y_H_A) << 8) + _getReg(_xm_addr, OUT_Y_L_A);
+        local z_raw = (_getReg(_xm_addr, OUT_Z_H_A) << 8) + _getReg(_xm_addr, OUT_Z_L_A);
 
         //server.log(format("%02X, %02X, %02X",x_raw, y_raw, z_raw));
     
@@ -915,5 +911,5 @@ class LSM9DS0 {
         
         return result;
     }
-}
 
+}

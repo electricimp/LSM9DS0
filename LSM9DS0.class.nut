@@ -92,6 +92,10 @@ class LSM9DS0 {
     _i2c        = null;
     _xm_addr    = null;
     _g_addr     = null;
+
+    RANGE_GYRO = null; // degrees per second
+    RANGE_MAG = null; // gauss
+    RANGE_ACCEL = null; // G
     
     _temp_enabled = null;
     
@@ -102,6 +106,16 @@ class LSM9DS0 {
         _g_addr = g_addr;
         
         _temp_enabled = false;
+
+        init();
+    }
+
+    // -------------------------------------------------------------------------
+    function init() {
+        // set the full-scale range values so we can return measurements with units
+        getRange_G(); // sets RANGE_GYRO. Default +/- 225 degrees per second
+        getRange_M(); // sets RANGE_MAG. Default +/- 4 gauss
+        getRange_A(); // sets RANGE_ACCEL. Default +/- 2 G
     }
     
     // -------------------------------------------------------------------------
@@ -169,6 +183,44 @@ class LSM9DS0 {
         // bit 1 = Y axis enable
         // bit 0 = X axis enable
         _setReg(_g_addr, CTRL_REG1_G, val);
+    }
+
+    // -------------------------------------------------------------------------
+    // set the full-scale range of the angular rate sensor
+    // default full-scale range is +/- 225 degrees per second
+    function setRange_G(range_dps) {
+        local val = _getReg(_g_addr, CTRL_REG4_G) & 0xCF;
+        local range_bits = 0x00; // default; 225 dps
+        RANGE_GYRO = 225;
+        if (range_dps <= 225); // mask already set
+        else if (range_dps <= 500) {
+            range_bits = 0x01;
+            RANGE_GYRO = 500;
+        } else if (range_dps <= 1000) {
+            range_bits = 0x02;
+            RANGE_GYRO = 1000;
+        } else {
+            range_bits = 0x03;
+            RANGE_GYRO = 2000;
+        }
+        _setReg(_g_addr, CTRL_REG4_G, val | (range_bits << 4));
+        return RANGE_GYRO;
+    }
+
+    // -------------------------------------------------------------------------
+    // get the currently-set full-scale range of the angular rate sensor
+    function getRange_G() {
+        local range_bits = (_getReg(_g_addr, CTRL_REG4_G) & 0x30) >> 4;
+        if (range_bits == 0x00) {
+            RANGE_GYRO = 225;
+        } else if (range_bits = 0x01) {
+            RANGE_GYRO = 500;
+        } else if (range_bits = 0x20) {
+            RANGE_GYRO = 1000;
+        } else {
+            RANGE_GYRO = 2000;
+        }
+        return RANGE_GYRO;
     }
     
     // -------------------------------------------------------------------------
@@ -297,6 +349,45 @@ class LSM9DS0 {
         // 0b10 or 0b11 -> power-down mode
         val = val | 0x20;
         _setReg(_xm_addr, CTRL_REG7_XM, val);
+    }
+
+    // -------------------------------------------------------------------------
+    // set the full-scale range of the magnetometer
+    // default full-scale range is +/- 4 gauss
+    function setRange_M(range_gauss) {
+        local val = _getReg(_xm_addr, CTRL_REG6_XM) & 0x9F;
+        local range_bits = 0;
+        if (range_gauss <= 2) {
+            range_bits = 0x00;
+            RANGE_MAG = 2;
+        } else if (range_gauss <= 4) {
+            range_bits = 0x01;
+            RANGE_MAG = 4;
+        } else if (range_gauss <= 8) {
+            range_bits = 0x02;
+            RANGE_MAG = 8;
+        } else {
+            range_bits = 0x03;
+            RANGE_MAG = 12;
+        }
+        _setReg(_xm_addr, CTRL_REG6_XM, val | (range_bits << 5));
+        return RANGE_MAG;
+    }
+
+    // -------------------------------------------------------------------------
+    // get the currently-set full-scale range of the magnetometer
+    function getRange_M() {
+        local range_bits = (_getReg(_xm_addr, CTRL_REG6_XM) & 0x60) >> 5;
+        if (range_bits == 0x00) {
+            RANGE_MAG = 2;
+        } else if (range_bits = 0x01) {
+            RANGE_MAG = 4;
+        } else if (range_bits = 0x02) {
+            RANGE_MAG = 8;
+        } else {
+            RANGE_MAG = 12;
+        }
+        return RANGE_MAG;
     }
     
     // -------------------------------------------------------------------------
@@ -472,6 +563,50 @@ class LSM9DS0 {
         if (state) { val = val | 0x07; }
         else { val = val & 0xF8; }
         _setReg(_xm_addr, CTRL_REG1_XM, val);
+    }
+
+    // -------------------------------------------------------------------------
+    // set the full-scale range of the accelerometer
+    // default full-scale range is +/- 2 G
+    function setRange_A(range_g) {
+        local val = _getReg(_xm_addr, CTRL_REG2_XM) & 0xC7;
+        local range_bits = 0;
+        if (range_g <= 2) {
+            range_bits = 0x00;
+            RANGE_ACCEL = 2;
+        } else if (range_g <= 4) {
+            range_bits = 0x01;
+            RANGE_ACCEL = 4;
+        } else if (range_g <= 6) {
+            range_bits = 0x02;
+            RANGE_ACCEL = 6;
+        } else if (range_g <= 8) {
+            range_bits = 0x03;
+            RANGE_ACCEL = 8;
+        } else {
+            range_bits = 0x04;
+            RANGE_ACCEL = 16;
+        }
+        _setReg(_xm_addr, CTRL_REG2_XM, val | (range_bits << 3));
+        return RANGE_ACCEL;
+    }
+
+    // -------------------------------------------------------------------------
+    // get the currently-set full-scale range of the accelerometer
+    function getRange_A() {
+        local range_bits = (_getReg(_xm_addr, CTRL_REG2_XM) & 0x38) >> 3;
+        if (range_bits == 0x00) {
+            RANGE_ACCEL = 2;
+        } else if (range_bits = 0x01) {
+            RANGE_ACCEL = 4;
+        } else if (range_bits = 0x02) {
+            RANGE_ACCEL = 6;
+        } else if (range_bits = 0x03) {
+            RANGE_ACCEL = 8;
+        } else {
+            RANGE_ACCEL = 16;
+        }
+        return RANGE_MAG;
     }
     
     // -------------------------------------------------------------------------

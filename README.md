@@ -138,7 +138,9 @@ imu.setInt1Duration_A(1);
 imu.setInt1Ths_A(16000);
 ```
 
-### All Class Methods
+## All Class Methods
+
+### General 
 
 #### getGyro()
 Reads and returns the latest measurement from the gyro as a table: `{ x: <xData>, y: <yData>, z: <zData> }`
@@ -176,6 +178,8 @@ Reads and returns the latest measurement from the temperature sensor in degrees 
 server.log(imu.getTemp() + "C")    // Log degrees Celsius
 ```
 
+### Angular Rate Sensor
+
 #### getDeviceId_G()
 Returns the 1-byte device ID of the angular rate sensor (from the WHO_AM_I_G register).
 
@@ -185,6 +189,24 @@ server.log(format("Gyro Device ID: 0x%02X", imu.getDeviceId_G()));
 
 #### setPowerState_G(*state*)
 Set the power state for the entire angular rate sensor (all three axes at once). Pass in TRUE to enable the Gyro.
+
+#### setRange_G(*range_dps*)
+Set the full-scale range for the angular rate sensor in degrees per second. Default full-scale range is +/- 225 degrees per second. The nearest available range less than or equal to the requested range will be selected. The selected range is returned. 
+
+Available ranges are 225, 500, 1000, and 2000 degrees per second.
+
+```Squirrel
+local newRange = setRange_G(1000);
+server.log(format("Set Angular Rate Sensor full-scale range to +/- %d degrees per second", newRange));
+```
+
+#### getRange_G()
+Returns the currently set full-scale range for the angular rate sensor in degrees per second.
+
+```Squirrel
+local range = getRange_G();
+server.log(format("Angular Rate Sensor full-scale range is +/0 %d degrees per second", range));
+```
 
 #### setIntActivelow_G()
 Set G_INT line active low. See example in "using interrupts" section above.
@@ -240,6 +262,8 @@ Returns the INT1_SRC_G register contents as an integer to allow the caller to de
 #### setHpfEn_G(*state*) 
 Enable/Disable the internal High-Pass Filter on the Gyro. Pass in TRUE to enable the HPF.
 
+### Accelerometer / Magnetometer
+
 #### getDeviceId_XM()
 Returns the 1-byte device ID of the accelerometer/magnetometer (from the WHO_AM_I_XM register).
 
@@ -271,6 +295,24 @@ Place the magnetometer in single-conversion mode. Will take measurements only wh
 
 #### setModePowerDown_M()
 Place the magnetometer in power-down mode. 
+
+#### setRange_M(*range_gauss*)
+Set the full-scale range for the magnetometer in gauss. Default full-scale range is +/- 4 gauss. The nearest available range less than or equal to the requested range will be selected. The selected range is returned. 
+
+Available ranges are 2, 4, 8, and 12 gauss.
+
+```Squirrel
+local newRange = setRange_M(8);
+server.log(format("Set Magnetometer full-scale range to +/- %d gauss", newRange));
+```
+
+#### getRange_M()
+Returns the currently set full-scale range for the magnetometer in gauss.
+
+```Squirrel
+local range = getRange_M();
+server.log(format("Magnetometer full-scale range is +/- %d gauss", range));
+```
 
 #### setIntEn_M(*state*)
 Enable/Disable Interrupt Generation from the Magnetometer. Pass in TRUE to enable. Note that the desired axes must also be explicitly enabled, and the interrupt source routed to one of the interrupt pins in order to observe a hardware interrupt.
@@ -354,6 +396,24 @@ Acclerometer axes can be enabled/disabled individually by extending this class.
 Set the data rate for continuous measurements from the Accelerometer. The closest datarate greater than or equal to the requested rate will be selected. Supported datarates are 3.125 Hz, 6.25 Hz, 12.5 Hz, 25 Hz, 50 Hz, 100 Hz, 200 Hz, 400 Hz, 800 Hz, and 1600 Hz. 
 
 The device comes out of reset with the accelerometer disabled. The default data rate when the accelerometer is enabled is 3.125 Hz.
+
+#### setRange_A(*range_g*)
+Set the full-scale range for the acceleromter in *g*. Default full-scale range is +/- 2 *g*. The nearest available range less than or equal to the requested range will be selected. The selected range is returned. 
+
+Available ranges are 2, 4, 6, 8, and 16 *g*.
+
+```Squirrel
+local newRange = setRange_A(4);
+server.log(format("Set Accelerometer full-scale range to +/- %d g", newRange));
+```
+
+#### getRange_A()
+Returns the currently set full-scale range for the accelerometer in *g*.
+
+```Squirrel
+local range = getRange_A();
+server.log(format("Accelerometer full-scale range is +/- %d g", range));
+```
 
 #### setTapIntEn_P1(*state*)
 Enable/Disable Tap Detection Interrupt on XM_INT1 Pin. Pass in TRUE to enable interrupts on Tap detect. 

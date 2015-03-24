@@ -43,9 +43,9 @@ imu.setModeCont_M(); // enable continuous measurement
 local acc = imu.getAccel();
 local mag = imu.getMag();
 local gyr = imu.getGyro();
-server.log(format("Accel: (%0.2f, %0.2f, %0.2f)", acc.x, acc.y, acc.z));
-server.log(format("Mag:   (%0.2f, %0.2f, %0.2f)", mag.x, mag.y, mag.z));
-server.log(format("Gyro:  (%0.2f, %0.2f, %0.2f)", gyr.x, gyr.y, gyr.z));
+server.log(format("Accel: (%0.2f, %0.2f, %0.2f) (g)", acc.x, acc.y, acc.z));
+server.log(format("Mag:   (%0.2f, %0.2f, %0.2f) (gauss)", mag.x, mag.y, mag.z));
+server.log(format("Gyro:  (%0.2f, %0.2f, %0.2f) (dps)", gyr.x, gyr.y, gyr.z));
 server.log(format("Temp: %dºC", imu.getTemp()));
 ```
 
@@ -134,8 +134,8 @@ imu.setIntActivehigh_XM();
 imu.setIntLatch_XM(1);
 // enable interrupt 1 on over-threshold on any axis
 imu.setInt1Duration_A(1);
-// default full scale is 2G; this sets the threshold to 1G
-imu.setInt1Ths_A(16000);
+// set interrupt to +/- 1G
+imu.setInt1Ths_A(1.0);
 ```
 
 ## All Class Methods
@@ -143,7 +143,11 @@ imu.setInt1Ths_A(16000);
 ### General 
 
 #### getGyro()
-Reads and returns the latest measurement from the gyro as a table: `{ x: <xData>, y: <yData>, z: <zData> }`
+Reads and returns the latest measurement from the gyro as a table: 
+
+`{ x: <xData>, y: <yData>, z: <zData> }`
+
+Units are degrees per second.
 
 ```Squirrel
 local gyro = imu.readGyro()
@@ -153,7 +157,11 @@ server.log("Y axis: " + gyro.z)
 ```
 
 #### getMag()
-Reads and returns the latest measurement from the magnetometer as a table: `{ x: <xData>, y: <yData>, z: <zData> }`
+Reads and returns the latest measurement from the magnetometer as a table: 
+
+`{ x: <xData>, y: <yData>, z: <zData> }`
+
+Units are gauss.
 
 ```Squirrel 
 local mag = imu.getMag();
@@ -163,7 +171,11 @@ server.log("Y axis: " + mag.z);
 ```
 
 #### getAccel()
-Reads and returns the latest measurement from the accelerometer as a table: `{ x: <xData>, y: <yData>, z: <zData> }`
+Reads and returns the latest measurement from the accelerometer as a table: 
+
+`{ x: <xData>, y: <yData>, z: <zData> }`
+
+Units are *g*s
 
 ```Squirrel
 local accel = imu.getAccel()
@@ -173,7 +185,8 @@ server.log("Y axis: " + accel.z)
 ```
 
 #### getTemp()
-Reads and returns the latest measurement from the temperature sensor in degrees Celsius
+Reads and returns the latest measurement from the temperature sensor in degrees Celsius.
+
 ```Squirrel
 server.log(imu.getTemp() + "C")    // Log degrees Celsius
 ```
@@ -243,7 +256,7 @@ Enable/Disable interrupt request latching for gyro. If enabled, interrupts will 
 Set the number of samples that must be measured over the threshold before throwing an interrupt.
 
 #### setIntThs_G(*ths_x*, *ths_y*, *ths_z*)
-Set the absolute value threshold for angular rate interrupts in each axis. Thesholds are given as integers and compared to full-scale. For example, the default full-scale range of the gyro is 245 degrees per second, corresponding to a value of +/-32000. To set the threshold to 125.5 degrees per second in either the positive or negative direction about Z:
+Set the absolute value threshold for angular rate interrupts in each axis. Thesholds are given in degrees per second, and are compared to the currently selected range of the sensor in order to calculate the appropriate value for the threshold registers. Set the sensor full-scale range before setting the interrupt threshold, if using a non-default range.
 
 ```Squirrel
 // enable interrupt
@@ -252,8 +265,8 @@ imu.setIntEnable_G(1);
 imu.setIntActivehigh_G();
 // throw interrupt after just one sample is over threshold
 imu.setIntDuration_G(1);
-// set threshold to 125.5 degrees per second about Z
-imu.setIntThs_G(0,0, 16000);
+// set threshold to +/- 90 degrees per second about Z
+imu.setIntThs_G(0, 0, 90);
 ```
 
 #### getIntSrc_G() 
@@ -364,7 +377,7 @@ Returns the contents of the INT_GEN_1_SRC register as an integer and clears latc
 Returns the contents of the INT_GEN_2_SRC register as an integer and clears latched interrupts on XM_INT2.
 
 #### setIntThs_M(*threshold*)
-Set the absolute value threshold for magnetometer interrupts in any axis. Thesholds are given as integers and compared to full-scale. For example, the default full-scale range of the magnetometer is +/- 4 gauss, corresponding to a value of +/-32000. To set the threshold to +/- 2 gauss.
+Set the absolute value threshold for magnetometer interrupts in any axis. Thesholds are given in gauss, and are compared to the currently selected range of the sensor in order to calculate the appropriate value for the threshold registers. Set the sensor full-scale range before setting the interrupt threshold, if using a non-default range.
 
 ```Squirrel
 // enable magnetometer
@@ -374,8 +387,8 @@ imu.setDatarate_M(50);
 imu.setIntEn_M(1);
 // set active-high
 imu.setIntActivehigh_G();
-// throw interrupt on angular rate over threshold in either direction
-imu.setIntThs_M(16000);
+// throw interrupt on magnetic field strength greater than 1.6 gauss in any direction
+imu.setIntThs_M(1.6);
 ```
 
 #### setHpfClick_XM(*state*)
@@ -454,7 +467,7 @@ Enable/Disable interrupt on magnetometer data readon XM_INT2 Pin.
 Returns the contents of STATUS_REG_A as an integer.
 
 #### setInt1Ths_A(*threshold*) 
-Set the absolute value threshold for inertial interrupt generator 1 in any axis. Thesholds are given as integers and compared to full-scale. For example, the default full-scale range of the accelerometer is +/- 2 G, corresponding to a value of +/-32000. To set the threshold to +/- 1 G:
+Set the absolute value threshold for inertial interrupt generator 1 in any axis. Thesholds are given in *g*s, and are compared to the currently selected range of the sensor in order to calculate the appropriate value for the threshold registers. Set the sensor full-scale range before setting the interrupt threshold, if using a non-default range.
 
 ```Squirrel
 // enable accelerometer
@@ -464,12 +477,12 @@ imu.setEnable_A(1);
 imu.setInertInt1En_P2(1);
 // set active-high
 imu.setIntActivehigh_XM();
-// throw interrupt on 1G in Z
-imu.setInt1Ths_A(16000);
+// throw interrupt on if acceleration greater than +/- 1.2 g occurs in any direction
+imu.setInt1Ths_A(1.2);
 ```
 
 #### setInt2Ths_A(*threshold*) 
-Set the absolute value threshold for inertial interrupt generator 1 in any axis.
+Set the absolute value threshold for inertial interrupt generator 2 in any axis.
 
 #### setInt1Duration_A(*numsamples*)
 Set the number of samples that must be measured over the threshold before throwing an interrupt on generator 1.
@@ -487,7 +500,7 @@ Enable/Disable double-click interrupts. Single- and double-click interrupts can 
 Enable/Disable double-click interrupts.
 
 #### setClickDetThs(*threshold*) 
-Set the Click Detection Threshold relative to full-scale values on the accelerometer (+/- 32000).
+Set the Click Detection Threshold in *g*s. Threshold values are compared to the currently selected range of the sensor in order to calculate the appropriate value for the threshold registers. Set the sensor full-scale range before setting the interrupt threshold, if using a non-default range.
 
 #### clickIntActive()
 Returns TRUE if a click interrupt is active.

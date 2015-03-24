@@ -838,6 +838,11 @@ class LSM9DS0 {
         } else {
             result.z <- z_raw;
         }
+
+        // multiply by full-scale to return with units
+        result.x = result.x * RANGE_GYRO;
+        result.y = result.y * RANGE_GYRO;
+        result.z = result.z * RANGE_GYRO;
         
         return result;
     }
@@ -868,6 +873,11 @@ class LSM9DS0 {
         } else {
             result.z <- z_raw;
         }
+
+        // multiply by full-scale range to return in gauss
+        result.x = result.x * RANGE_MAG;
+        result.y = result.y * RANGE_MAG;
+        result.z = result.z * RANGE_MAG;
         
         return result;
     }
@@ -900,6 +910,11 @@ class LSM9DS0 {
         } else {
             result.z <- z_raw;
         }
+
+        // multiply by full-scale range to return in G
+        result.x = result.x * RANGE_ACCEL
+        result.y = result.y * RANGE_ACCEL;
+        result.z = result.z * RANGE_ACCEL;
         
         return result;
     }

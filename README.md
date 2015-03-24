@@ -31,14 +31,10 @@ imu <- LSM9DS0(i2c);
 The LSM9DS0 comes out of reset with all functional blocks disabled. To read data from any of the sensors, they must first be enabled. 
 
 ```Squirrel
-// Enable the gyro
-// Consumes 6.1 mA
-// Enables all three axes at once
+// Enable the gyro in all axes
 imu.setPowerState_G(1);
-// Enable each Accelerometer Axis
-imu.setEnableX_A(1);
-imu.setEnableY_A(1);
-imu.setEnableZ_A(1);
+// Enable Accelerometer in all axes
+imu.setEnable_A(1);
 // Enable the Magnetometer by setting the ODR to a non-zero value
 imu.setDatarate_M(50); // 50 Hz
 imu.setModeCont_M(); // enable continuous measurement
@@ -80,8 +76,8 @@ function myGyroDrdyCallback() {
 g_drdy      <- hardware.pin5; // angular rate Data Ready
 g_drdy.configure(DIGITAL_IN, myGyroDrdyCallback);
 
-// enable interrupt on data ready
-imu.setIntDrdy_G(1);
+// enable data ready line
+imu.setDrdyEnable_G(1);
 ```
 
 #### Gyro Interrupt
@@ -101,17 +97,10 @@ g_int.configure(DIGITAL_IN, myGyroIntCallback);
 // enable gyro interrupt
 imu.setIntEnable_G(1);
 // set active-high
-imu.setIntActivelow_G(0);
-// set push-pull
-imu.setIntOpendrain_G(0);
+imu.setIntActivehigh_G();
+// interrupt is push-pull by default
 // enable interrupt latch
 imu.setIntLatchEn_G(1);
-// Enable Interrupt on any axis over threshold
-imu.setIntZlowEn_G(1);
-imu.setIntYhighEn_G(1);
-imu.setIntYlowEn_G(1);
-imu.setIntXhighEn_G(1);
-imu.setIntXlowEn_G(1);
 // Set threshold for each axis to one-half of full scale
 // threshold value is in absolute value
 imu.setIntThs_G(16000, 16000, 16000);
@@ -136,19 +125,14 @@ function myAccelIntCallback() {
 xm_int1     <- hardware.pin2; // accel / magnetometer interrupt 1
 xm_int1.configure(DIGITAL_IN, myAccelIntCallback);
 
+// Enable inertial interrupt generator 1 on all axes
 // Route inertial interrupt generator 1 to Interrupt Pin 1
 imu.setInertInt1En_P1(1);
 // active high
-imu.setIntActivehigh_XM(1);
+imu.setIntActivehigh_XM();
 // latch
 imu.setIntLatch_XM(1);
 // enable interrupt 1 on over-threshold on any axis
-imu.setInt1ZhighEn_A(1);
-imu.setInt1ZlowEn_A(1);
-imu.setInt1YhighEn_A(1);
-imu.setInt1YlowEn_A(1);
-imu.setInt1XhighEn_A(1);
-imu.setInt1XlowEn_A(1);
 imu.setInt1Duration_A(1);
 // default full scale is 2G; this sets the threshold to 1G
 imu.setInt1Ths_A(16000);
@@ -202,51 +186,36 @@ server.log(format("Gyro Device ID: 0x%02X", imu.getDeviceId_G()));
 #### setPowerState_G(*state*)
 Set the power state for the entire angular rate sensor (all three axes at once). Pass in TRUE to enable the Gyro.
 
-#### setPowerState_GX(*state*)
-Enable/disable the X-Axis only of the angular rate sensor. Pass in TRUE to enable the X-Axis.
+#### setIntActivelow_G()
+Set G_INT line active low. See example in "using interrupts" section above.
 
-#### setPowerState_GY(*state*)
-Enable/disable the Y-Axis only of the angular rate sensor. Pass in TRUE to enable the Y-Axis.
+G_INT is active-high by default.
 
-#### setPowerState_GZ(*state*)
-Enable/disable the Z-Axis only of the angular rate sensor. Pass in TRUE to enable the Z-Axis.
+#### setIntActivehigh_G()
+Set G_INT line active active high. See example in "using interrupts" section above.
+
+G_INT is active-high by default.
+
+#### setIntOpendrain_G()
+Set G_INT line to open-drain drive. See example in "using interrupts" section above. 
+
+G_INT is push-pull by default.
+
+#### setIntPushpull_G()
+Set G_INT line to push-pull drive. See example in "using interrupts" section above. 
+
+G_INT is push-pull by default.
+
+#### setDrdyEnable_G(*state*)
+Enable/Disable Data Ready interrupt line for Gyro. Pass in TRUE to enable Data Ready line.
 
 #### setIntEnable_G(*state*)
 Enable/disable hardware interrupts on G_INT pin. Pass in TRUE to enable interrupts on the G_INT line. See example in "using interrupts" section above.
 
-#### setIntActiveLow_G(*state*)
-Set G_INT line active low or active high. Pass in TRUE to set active-low. Pass in FALSE to set active-high. See example in "using interrupts" section above.
-
-G_INT is active-high by default.
-
-#### setIntOpenDrain_G(*state*)
-Set G_INT line to open-drain or push-pull drive. Pass in TRUE to set Open Drain. Pass in FALSE to set push-pull. See example in "using interrupts" section above. 
-
-G_INT is push-pull by default.
-
-#### setIntDrdy_G(*state*)
-Enable/Disable interrupt on Data-Ready Event for Gyro. Pass in TRUE to enable interrupt. This interrupt will be delivered on the G_DRDY line, rather than the G_INT line. See example above.
+Enabling interrupts in the Gyro enables interrupts on all three axes in both the positive and negative directions. All six of these interrupts (each axis over threshold or under negative axis) can be individually configured by extending this library.
 
 #### setIntLatchEn_G(*state*)
 Enable/Disable interrupt request latching for gyro. If enabled, interrupts will persist until cleared by calling getIntSrc_G(). See the example in "using interrupts" above.
-
-#### setIntZhighEn_G(*state*)
-Enable/Disable interrupt on Z angular rate over threshold. Threshold is set with setIntThs_G(*x_ths*,*y_ths*,*z_ths*). See example above.
-
-#### setIntZlowEn_G(*state*)
-Enable/Disable interrupt on Z angular rate over negative threshold. 
-
-#### setIntYhighEn_G(*state*)
-Enable/Disable interrupt on Y angular rate over threshold.
-
-#### setIntYlowEn_G(*state*)
-Enable/Disable interrupt on Y angular rate over negative threshold. 
-
-#### setIntXhighEn_G(*state*)
-Enable/Disable interrupt on X angular rate over threshold.
-
-#### setIntXlowEn_G(*state*)
-Enable/Disable interrupt on X angular rate over negative threshold. 
 
 #### setIntDuration_G(*numsamples*)
 Set the number of samples that must be measured over the threshold before throwing an interrupt.
@@ -270,9 +239,6 @@ imu.setIntThs_G(0,0, 16000);
 
 #### getIntSrc_G() 
 Returns the INT1_SRC_G register contents as an integer to allow the caller to determine why an interrupt was thrown. Reading INT1_SRC_G also clears any latched interrupts. See example in "using interrupts" section above.
-
-#### setFifoEn_G(*state*)
-Enable/Disable the internal FIFO for gyro data. Pass in TRUE to enable the FIFO.
 
 #### setHpfEn_G(*state*) 
 Enable/Disable the internal High-Pass Filter on the Gyro. Pass in TRUE to enable the HPF.
@@ -320,17 +286,43 @@ imu.setIntEn_MX(1);
 imu.setMagIntEn_P1(1);
 ```
 
-#### setIntActivehigh_XM(*state*)
-Set XM interrupts active low or active high. Pass in TRUE to set active-high. Pass in FALSE to set active-low. See example in "using interrupts" section above.
+#### setIntActivehigh_XM()
+Set XM interrupt pins to active high. See example in "using interrupts" section above.
 
-#### setIntOpendrain_XM(*state*)
-Set XM interrupt driver to open-drain or push-pull. Pass in TRUE to set open-drain. Pass in FALSE to set push-pull. XM interrupt driver is push-pull by default. See example in "using interrupts" section above.
+XM interrupt pins are active-low by default.
+
+#### setIntActivelow_XM()
+Set XM interrupt pins to active low. See example in "using interrupts" section above.
+
+XM interrupt pins are active-low by default.
+
+#### setIntOpendrain_XM()
+Set XM interrupt driver to open-drain. See example in "using interrupts" section above.
+
+XM interrupt drivers are push-pull by default.
+
+#### setIntPushpull_XM()
+Set XM interrupt driver to push-pull. See example in "using interrupts" section above.
+
+XM interrupt drivers are push-pull by default.
 
 #### setIntLatch_XM(*state*)
 Set TRUE to latch interrupt requests for either of the XM interrupt sources. This globally latches interrupt requests; to clear a latched interrupt, call getInt1Src_XM(), getInt2Src_XM(), and getIntSrc_M().
 
+#### setInt1LatchEn_XM(*state*)
+Set TRUE to latch interrupt requests for XM_INT1. To clear a latched interrupt, call getInt1Src_XM();
+
+#### setInt2LatchEn_XM(*state*)
+Set TRUE to latch interrupt requests for XM_INT2. To clear a latched interrupt, call getInt2Src_XM();
+
 #### getIntSrc_M()
 Read the magnetometer's interrupt source register to determine what caused an interrupt. 
+
+#### getInt1Src_XM()
+Returns the contents of the INT_GEN_1_SRC register as an integer and clears latched interrupts on XM_INT1.
+
+#### getInt2Src_XM()
+Returns the contents of the INT_GEN_2_SRC register as an integer and clears latched interrupts on XM_INT2.
 
 #### setIntThs_M(*threshold*)
 Set the absolute value threshold for magnetometer interrupts in any axis. Thesholds are given as integers and compared to full-scale. For example, the default full-scale range of the magnetometer is +/- 4 gauss, corresponding to a value of +/-32000. To set the threshold to +/- 2 gauss.
@@ -356,17 +348,15 @@ Enable/Disable internal high-pass filter on inertial interrupt generator 1.
 #### setHpfInt2_XM(*state*)
 Enable/Disable internal high-pass filter on inertial interrupt generator 2. 
 
+#### setEnable_A(*state*)
+Enable/Disable the Accelerometer in all axes.
+
+Acclerometer axes can be enabled/disabled individually by extending this class.
+
 #### setDatarate_A(*rate_Hz*)
 Set the data rate for continuous measurements from the Accelerometer. The closest datarate greater than or equal to the requested rate will be selected. Supported datarates are 3.125 Hz, 6.25 Hz, 12.5 Hz, 25 Hz, 50 Hz, 100 Hz, 200 Hz, 400 Hz, 800 Hz, and 1600 Hz. 
 
-#### setEnableX_A(*state*)
-Enable/Disable the Accelerometer X-Axis.
-
-#### setEnableY_A(*state*)
-Enable/Disable the Accelerometer Y-Axis.
-
-#### setEnableZ_A(*state*)
-Enable/Disable the Accelerometer Z-Axis.
+The device comes out of reset with the accelerometer disabled. The default data rate when the accelerometer is enabled is 3.125 Hz.
 
 #### setTapIntEn_P1(*state*)
 Enable/Disable Tap Detection Interrupt on XM_INT1 Pin. Pass in TRUE to enable interrupts on Tap detect. 
@@ -403,18 +393,6 @@ Enable/Disable interrupt on accelerometer data ready on XM_INT2 Pin.
 #### setMagDrdyIntEn_P2(*state*)
 Enable/Disable interrupt on magnetometer data readon XM_INT2 Pin. 
 
-#### setInt1LatchEn_XM(*state*)
-Enable/Disable interrupt request latching for XM_INT1 Pin. To clear a latched interrupt, call getInt1Src_XM();
-
-#### setInt2LatchEn_XM(*state*)
-Enable/Disable interrupt request latching for XM_INT2 Pin. To clear a latched interrupt, call getInt2Src_XM();
-
-#### getInt1Src_XM()
-Returns the contents of the INT_GEN_1_SRC register as an integer and clears latched interrupts on XM_INT1.
-
-#### getInt2Src_XM()
-Returns the contents of the INT_GEN_2_SRC register as an integer and clears latched interrupts on XM_INT2.
-
 #### getStatus_A()
 Returns the contents of STATUS_REG_A as an integer.
 
@@ -424,15 +402,13 @@ Set the absolute value threshold for inertial interrupt generator 1 in any axis.
 ```Squirrel
 // enable accelerometer
 imu.setDatarate_A(50);
-imu.setEnableX_A(1);
-imu.setEnableY_A(1);
-imu.setEnableZ_A(1);
-// enable interrupt
+imu.setEnable_A(1);
+// enable inertial interrupts on all axes on interrupt generator 1, routed to XM_INT2 pin
 imu.setInertInt1En_P2(1);
 // set active-high
+imu.setIntActivehigh_XM();
 // throw interrupt on 1G in Z
 imu.setInt1Ths_A(16000);
-imu.setInt1ZhighEn_A(1);
 ```
 
 #### setInt2Ths_A(*threshold*) 
@@ -444,62 +420,17 @@ Set the number of samples that must be measured over the threshold before throwi
 #### setInt2Duration_A(*numsamples*)
 Set the number of samples that must be measured over the threshold before throwing an interrupt on generator 2.
 
-#### setInt1ZhighEn_A(*state*)
-Enable/Disable inertial interrupt 1 on accelerometer over threshold in Z.
-
-#### setInt1ZlowEn_A(*state*)
-Enable/Disable inertial interrupt 1 on accelerometer over negative threshold in Z.
-
-#### setInt1YhighEn_A(*state*)
-Enable/Disable inertial interrupt 1 on accelerometer over threshold in Y.
-
-#### setInt1YlowEn_A(*state*)
-Enable/Disable inertial interrupt 1 on accelerometer over negative threshold in Y.
-
-#### setInt1XhighEn_A(*state*)
-Enable/Disable inertial interrupt 1 on accelerometer over threshold in X.
-
-#### setInt1XlowEn_A(*state*)
-Enable/Disable inertial interrupt 1 on accelerometer over negative threshold in X.
-
-#### setInt2ZhighEn_A(*state*)
-Enable/Disable inertial interrupt 2 on accelerometer over threshold in Z.
-
-#### setInt2ZlowEn_A(*state*)
-Enable/Disable inertial interrupt 2 on accelerometer over negative threshold in Z.
-
-#### setInt2YhighEn_A(*state*)
-Enable/Disable inertial interrupt 2 on accelerometer over threshold in Y.
-
-#### setInt2YlowEn_A(*state*)
-Enable/Disable inertial interrupt 2 on accelerometer over negative threshold in Y.
-
-#### setInt2XhighEn_A(*state*)
-Enable/Disable inertial interrupt 2 on accelerometer over threshold in X.
-
-#### setInt2XlowEn_A(*state*)
-Enable/Disable inertial interrupt 2 on accelerometer over negative threshold in X.
-
 #### setTempEn(*state*)
 Enable/Disable onboard temperature sensor. Note that the temperature on-die may be several degrees different from ambient temperature. In bare-board testing, enabling the gyro increased the value returned by the on-die temperature sensor by over 6&deg;C.
 
-#### setSnglclickIntEn_Z(*state*)
-Enable/Disable single-click interrupts in the Z axis.
+#### setSnglclickIntEn(*state*)
+Enable/Disable double-click interrupts. Single- and double-click interrupts can be enabled and disabled on each individual axis by extending this class. Click interrupts can be detected in each individual axis and direction by extending this class.
 
-#### setSngleclickIntEn_Y(*state*)
-Enable/Disable single-click interrupts in the Y axis.
+#### setDblclickIntEn(*state*)
+Enable/Disable double-click interrupts.
 
-#### setSngleclickIntEn_X(*state*)
-Enable/Disable single-click interrupts in the X axis.
-
-#### setDblclickIntEn_Z(*state*)
-Enable/Disable double-click interrupts in the Z axis.
-
-#### setDblclickIntEn_Y(*state*)
-Enable/Disable double-click interrupts in the Y axis.
-
-#### setDblclickIntEn_X(*state*)
-Enable/Disable double-click interrupts in the X axis.
+#### setClickDetThs(*threshold*) 
+Set the Click Detection Threshold relative to full-scale values on the accelerometer (+/- 32000).
 
 #### clickIntActive()
 Returns TRUE if a click interrupt is active.
@@ -510,17 +441,6 @@ Returns TRUE if a single-click interrupt is active.
 #### dblclickDet()
 Returns TRUE if a double-click interrupt is active. 
 
-#### clickNegDir()
-Returns TRUE if active click event is in negative direction.
-
-#### zclickDet() 
-Returns TRUE if active click event is in Z direction. 
-
-#### yclickDet()
-Returns TRUE if active click event is in Y direction.
-
-#### xclickDet()
-Returns TRUE if active click is event in X direction.
 
 ## License
 

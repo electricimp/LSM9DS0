@@ -102,12 +102,6 @@ class LSM9DS0 {
         _g_addr = g_addr;
         
         _temp_enabled = false;
-        
-        init();
-    }
-    
-    // -------------------------------------------------------------------------
-    function init() {
     }
     
     // -------------------------------------------------------------------------
@@ -167,92 +161,34 @@ class LSM9DS0 {
     // set power state of the gyro device
     // note that if individual axes were previously disabled, they still will be
     function setPowerState_G(state) {
-        _setRegBit(_g_addr, CTRL_REG1_G, 3, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    function setPowerState_GZ(state) {
-        _setRegBit(_g_addr, CTRL_REG1_G, 2, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    function setPowerState_GY(state) {
-        _setRegBit(_g_addr, CTRL_REG1_G, 1, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    function setPowerState_GX(state) {
-        _setRegBit(_g_addr, CTRL_REG1_G, 0, state);
+        local val = _getReg(_g_addr, CTRL_REG1_G);
+        if (state) { val = val | 0x0F; }
+        else { val = val & 0xF0; }
+        // bit 3 = global enable
+        // bit 2 = Z axis enable
+        // bit 1 = Y axis enable
+        // bit 0 = X axis enable
+        _setReg(_g_addr, CTRL_REG1_G, val);
     }
     
     // -------------------------------------------------------------------------
     // set high to enable interrupt generation from the gyro
     function setIntEnable_G(state) {
+        // CTRL_REG3_G bit 7 is global enable
         _setRegBit(_g_addr, CTRL_REG3_G, 7, state);
+        // INT1_CFG_G enables interrupt generation on each axis
+        // bit 5 = Z axis over threshold
+        // bit 4 = Z axis under negative threshold
+        // bit 3 = Y axis over threshold
+        // bit 2 = Y axis under negative threshold
+        // bit 1 = X axis over threshold
+        // bit 0 = X axis under negative threshold
+        local val = _getReg(_g_addr, INT1_CFG_G);
+        if (state) { val = val | 0x3F; } 
+        else { val = val & 0xC0; }
+        _setReg(_g_addr, INT1_CFG_G, val);
     }
-    
-    // -------------------------------------------------------------------------
-    // set high to enable active-low interrupt on gyro interrupt
-    // set low to enable active-high
-    function setIntActivelow_G(state) {
-        _setRegBit(_g_addr, CTRL_REG3_G, 5, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // set high to enable open-drain output on gyro interrupt
-    // set low to enable push-pull
-    function setIntOpendrain_G(state) {
-        _setRegBit(_g_addr, CTRL_REG3_G, 4, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // Generate interrupt on data-ready
-    function setIntDrdy_G(state) {
-        _setRegBit(_g_addr, CTRL_REG3_G, 3, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt latch for gyro interrupts
-    function setIntLatchEn_G(state) {
-        _setRegBit(_g_addr, INT1_CFG_G, 6, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt generation on Z high event
-    function setIntZhighEn_G(state) {
-        _setRegBit(_g_addr, INT1_CFG_G, 5, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt generation on Z low event
-    function setIntZlowEn_G(state) {
-        _setRegBit(_g_addr, INT1_CFG_G, 4, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt generation on Y high event
-    function setIntYhighEn_G(state) {
-        _setRegBit(_g_addr, INT1_CFG_G, 3, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt generation on Y low event
-    function setIntYlowEn_G(state) {
-        _setRegBit(_g_addr, INT1_CFG_G, 2, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt generation on X high event
-    function setIntXhighEn_G(state) {
-        _setRegBit(_g_addr, INT1_CFG_G, 1, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt generation on X low event
-    function setIntXlowEn_G(state) {
-        _setRegBit(_g_addr, INT1_CFG_G, 0, state);
-    }
-    
+
     // -------------------------------------------------------------------------
     // set the gyro threshold values for interrupt
     function setIntThs_G(x_ths, y_ths, z_ths) {
@@ -262,6 +198,47 @@ class LSM9DS0 {
         _setReg(_g_addr, INT1_THS_YL_G, (y_ths & 0xff));
         _setReg(_g_addr, INT1_THS_ZH_G, (z_ths & 0xff00) >> 8);
         _setReg(_g_addr, INT1_THS_ZL_G, (z_ths & 0xff));
+    }
+
+    // -------------------------------------------------------------------------
+    // configure Gyro Interrupt as active-low
+    // interrupt is active-high by default.
+    function setIntActivelow_G() {
+        _setRegBit(_g_addr, CTRL_REG3_G, 5, 1);
+    }
+
+    // -------------------------------------------------------------------------
+    // configure Gyro Interrupt as active-high
+    // interrupt is active-high by default.
+    function setIntActivehigh_G() {
+        _setRegBit(_g_addr, CTRL_REG3_G, 5, 0);
+    }
+    
+    // -------------------------------------------------------------------------
+    // configure Gyro Interrupt as push-pull
+    // interrupt is push-pull by default
+    function setIntOpendrain_G() {
+        _setRegBit(_g_addr, CTRL_REG3_G, 4, 0);
+    }
+
+    // -------------------------------------------------------------------------
+    // configure Gyro Interrupt as push-pull
+    // interrupt is push-pull by default
+    function setIntPushpull_G() {
+        _setRegBit(_g_addr, CTRL_REG3_G, 4, 1);
+    }
+    
+    // -------------------------------------------------------------------------
+    // enable/disable interrupt latch for gyro interrupts
+    function setIntLatchEn_G(state) {
+        _setRegBit(_g_addr, INT1_CFG_G, 6, state);
+    }
+
+    // -------------------------------------------------------------------------
+    // Enable/Disable Gyro Data Ready Line
+    // Pin configuration mimics Gyro Interrupt Line (push-pull, active high by default)
+    function setDrdyEnable_G(state) {
+        _setRegBit(_g_addr, CTRL_REG3_G, 3, state);
     }
     
     // -------------------------------------------------------------------------
@@ -274,12 +251,6 @@ class LSM9DS0 {
     // read the interrupt source register to determine what caused an interrupt
     function getIntSrc_G() {
         return _getReg(_g_addr, INT1_SRC_G);
-    }
-    
-    // -------------------------------------------------------------------------
-    // Enable/disable FIFO for gyro
-    function setFifoEn_G(state) {
-        _setRegBit(_g_addr, CTRL_REG5_G, 6, state);
     }
     
     // -------------------------------------------------------------------------
@@ -329,54 +300,85 @@ class LSM9DS0 {
     }
     
     // -------------------------------------------------------------------------
-    // Enable interrupt generation on x axis for magnetic data
-    function setIntEn_MX(state) {
-        _setRegBit(_xm_addr, INT_CTRL_REG_M, 7, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // Enable interrupt generation on y axis for magnetic data
-    function setIntEn_MY(state) {
-        _setRegBit(_xm_addr, INT_CTRL_REG_M, 6, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // Enable interrupt generation on z axis for magnetic data
-    function setIntEn_MZ(state) {
-        _setRegBit(_xm_addr, INT_CTRL_REG_M, 5, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // set high to enable interrupt generation from the magnetometer
+    // Enable/disable interrupt generation from the magnetometer
+    // controls all three axes together
     function setIntEn_M(state) {
-        _setRegBit(_xm_addr, INT_CTRL_REG_M, 0, state);
+        // INT_CTRL_REG_M
+        // bit 7 = X axis 
+        // bit 6 = Y axis
+        // bit 5 = Z axis
+        // bit 0 = global enable/disable
+        local val = _getReg(_xm_addr, INT_CTRL_REG_M);
+        if (state) { val = val | 0xE1; }
+        else { val = val & 0x1E; }
+        _setReg(_xm_addr, INT_CTRL_REG_M, val);
+    }
+
+    // -------------------------------------------------------------------------
+    // set XM interrupt pins to active-low
+    // XM interrupts are active-low by default
+    function setIntActivelow_XM() {
+        _setRegBit(_xm_addr, INT_CTRL_REG_M, 3, 0);
+    }
+
+    // -------------------------------------------------------------------------
+    // set XM interrupt pins to active-high
+    // XM interrupts are active-low by default
+    function setIntActivehigh_XM() {
+        _setRegBit(_xm_addr, INT_CTRL_REG_M, 3, 1);
     }
     
     // -------------------------------------------------------------------------
-    // set high to enable active-high interrupt for accel/mag
-    // set low to enable active-low
-    function setIntActivehigh_XM(state) {
-        _setRegBit(_xm_addr, INT_CTRL_REG_M, 3, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // set high to enable open-drain output for accel/mag
-    // set low to enable push-pull
+    // configure XM interrupt pins as Open-Drain
+    // XM interrupt pins are push-pull by default
     function setIntOpendrain_XM(state) {
-        _setRegBit(_xm_addr, INT_CTRL_REG_M, 4, state);
+        _setRegBit(_xm_addr, INT_CTRL_REG_M, 4, 1);
     }
+
+    // -------------------------------------------------------------------------
+    // configure XM interrupt pins as Push-Pull
+    // XM interrupt pins are push-pull by default
+    function setIntPushpull_XM(state) {
+        _setRegBit(_xm_addr, INT_CTRL_REG_M, 4, 0);
+    }    
     
     // -------------------------------------------------------------------------
-    // enable/disable interrupt latching for accel/magnetometer
+    // enable/disable global interrupt latching for accel/magnetometer
     // if set, clear interrupt by reading INT_GEN_1_SRC, INT_GEN_2_SRC, AND INT_SRC_REG_M
     function setIntLatch_XM(state) {
         _setRegBit(_xm_addr, INT_CTRL_REG_M, 2, state);
+    }
+
+    // -------------------------------------------------------------------------
+    // Enable / Disable Interrupt Latching onh XM_INT1 Pin
+    // clear interrupts by reading INT_GEN_1_SRC
+    function setInt1LatchEn_XM(state) {
+        _setRegBit(_xm_addr, CTRL_REG5_XM, 0, state);
+    }
+
+    // -------------------------------------------------------------------------
+    // Enable / Disable Interrupt Latching on XM_INT2 Pin
+    // clear interrupts by reading INT_GEN_2_SRC
+    function setInt2LatchEn_XM(state) {
+        _setRegBit(_xm_addr, CTRL_REG5_XM, 1, state);
     }
     
     // -------------------------------------------------------------------------
     // read the interrupt source register to determine what caused an interrupt
     function getIntSrc_M() {
         return _getReg(xm_addr, INT_SRC_REG_M);
+    }
+
+    // -------------------------------------------------------------------------
+    // read the INT_GEN_1_SRC register to determine what threw an interrupt on generator 1
+    function getInt1Src_XM() {
+        return _getReg(_xm_addr, INT_GEN_1_SRC);
+    }
+    
+    // -------------------------------------------------------------------------
+    // read the INT_GEN_2_SRC register to determine what threw an interrupt on generator 2
+    function getInt2Src_XM() {
+        return _getReg(_xm_addr, INT_GEN_2_SRC);
     }
     
     // -------------------------------------------------------------------------
@@ -399,8 +401,31 @@ class LSM9DS0 {
     }
     
     // -------------------------------------------------------------------------
+    // Enable/disable high-pass filter for interrupt generator 2
     function setHpfInt2_XM(state) {
         _setRegBit(_xm_addr, CTRL_REG0_XM, 0, state);
+    }
+
+    // -------------------------------------------------------------------------
+    // Set Magnetometer Data Rate in Hz
+    // IMU comes up with magnetometer data rate set to 3.125 Hz
+    function setDatarate_M(rate) {
+        local val = _getReg(_xm_addr, CTRL_REG5_XM) & 0xE3;
+        if (rate <= 3.125) {
+            // rate already set; 0x0
+        } else if (rate <= 6.25) {
+            val = val | (0x01 << 3);
+        } else if (rate <= 12.5) {
+            val = val | (0x02 << 3);
+        } else if (rate <= 25) {
+            val = val | (0x03 << 3);
+        } else if (rate <= 50) {
+            val = val | (0x04 << 3);
+        } else {
+            // rate = 100 Hz
+            val = val | (0x05 << 3);
+        } 
+        _setReg(_xm_addr, CTRL_REG5_XM, val);
     }
     
     // -------------------------------------------------------------------------
@@ -434,45 +459,19 @@ class LSM9DS0 {
         }
         _setReg(_xm_addr, CTRL_REG1_XM, val);
     }
-    
+
     // -------------------------------------------------------------------------
-    // Enable/Disable X-axis accelerometer
-    function setEnableX_A(state) {
-        _setRegBit(_xm_addr, CTRL_REG1_XM, 0, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // Enable/Disable Y-axis accelerometer
-    function setEnableY_A(state) {
-        _setRegBit(_xm_addr, CTRL_REG1_XM, 1, state);;
-    }
-    
-    // -------------------------------------------------------------------------
-    // Enable/Disable Z-axis accelerometer
-    function setEnableZ_A(state) {
-        _setRegBit(_xm_addr, CTRL_REG1_XM, 2, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // Set Magnetometer Data Rate in Hz
-    // IMU comes up with magnetometer data rate set to 3.125 Hz
-    function setDatarate_M(rate) {
-        local val = _getReg(_xm_addr, CTRL_REG5_XM) & 0xE3;
-        if (rate <= 3.125) {
-            // rate already set; 0x0
-        } else if (rate <= 6.25) {
-            val = val | (0x01 << 3);
-        } else if (rate <= 12.5) {
-            val = val | (0x02 << 3);
-        } else if (rate <= 25) {
-            val = val | (0x03 << 3);
-        } else if (rate <= 50) {
-            val = val | (0x04 << 3);
-        } else {
-            // rate = 100 Hz
-            val = val | (0x05 << 3);
-        } 
-        _setReg(_xm_addr, CTRL_REG5_XM, val);
+    // Enable/disable the accelerometer
+    // sets all three axes
+    function setEnable_A(state) {
+        // CTRL_REG1_XM enables/disables accelerometer axes
+        // bit 0 = X axis
+        // bit 1 = Y axis
+        // bit 2 = Z axis
+        local val = _getReg(_xm_addr, CTRL_REG1_XM);
+        if (state) { val = val | 0x07; }
+        else { val = val & 0xF8; }
+        _setReg(_xm_addr, CTRL_REG1_XM, val);
     }
     
     // -------------------------------------------------------------------------
@@ -480,17 +479,49 @@ class LSM9DS0 {
     function setTapIntEn_P1(state) {
         _setRegBit(_xm_addr, CTRL_REG3_XM, 6, state);
     }
+
+    // -------------------------------------------------------------------------
+    // Set inertial interrupt enable on all axes for generator 1
+    function _setInertInt1AxesEn(state) {
+        local val = _getReg(_xm_addr, INT_GEN_1_REG);
+        // bit 5 = Z high
+        // bit 4 = Z low
+        // bit 3 = Y high
+        // bit 2 = Y low
+        // bit 1 = X high
+        // bit 0 = X low
+        if (state) { val = val | 0x3F; }
+        else { val = val & 0xC0; }
+        _setReg(_xm_addr, INT_GEN_1_REG, val);
+    }
+
+    // -------------------------------------------------------------------------
+    // Set inertial interrupt enable on all axes for generator 2
+    function _setInertInt2AxesEn(state) {
+        local val = _getReg(_xm_addr, INT_GEN_2_REG);
+        // bit 5 = Z high
+        // bit 4 = Z low
+        // bit 3 = Y high
+        // bit 2 = Y low
+        // bit 1 = X high
+        // bit 0 = X low
+        if (state) { val = val | 0x3F; }
+        else { val = val & 0xC0; }
+        _setReg(_xm_addr, INT_GEN_2_REG, val);
+    }
     
     // -------------------------------------------------------------------------
     // Enable Inertial Interrupt Generator 1 on INT1_XM
     function setInertInt1En_P1(state) {
         _setRegBit(_xm_addr, CTRL_REG3_XM, 5, state);
+        _setInertInt1AxesEn(state);
     }
     
     // -------------------------------------------------------------------------
     // Enable Inertial Interrupt Generator 2 on INT1_XM
     function setInertInt2En_P1(state) {
         _setRegBit(_xm_addr, CTRL_REG3_XM, 4, state);
+        _setInertInt2AxesEn(state);
     }
     
     // -------------------------------------------------------------------------
@@ -546,19 +577,7 @@ class LSM9DS0 {
     function setMagDrdyIntEn_p2(state) {
         _setRegBit(_xm_addr, CTRL_REG4_XM, 2, state);
     }
-    
-    // -------------------------------------------------------------------------
-    // Enable / Disable Interrupt Latching on XM_INT2 Pin
-    function setInt2LatchEn_XM(state) {
-        _setRegBit(_xm_addr, CTRL_REG5_XM, 1, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // Enable / Disable Interrupt Latching onh XM_INT1 Pin
-    function setInt1LatchEn_XM(state) {
-        _setRegBit(_xm_addr, CTRL_REG5_XM, 0, state);
-    }
-    
+        
     // -------------------------------------------------------------------------
     // Enable temperature sensor
     function setTempEn(state) {
@@ -575,53 +594,7 @@ class LSM9DS0 {
     function getStatus_A() {
         return _getReg(_xm_addr, STATUS_REG_A);
     }    
-    
-    // -------------------------------------------------------------------------
-    function getInt1Src_XM() {
-        return _getReg(_xm_addr, INT_GEN_1_SRC);
-    }
-    
-    // -------------------------------------------------------------------------
-    function getInt2Src_XM() {
-        return _getReg(_xm_addr, INT_GEN_2_SRC);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt 1 generation on Z high event
-    function setInt1ZhighEn_A(state) {
-        _setRegBit(_xm_addr, INT_GEN_1_REG, 5, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt 1 generation on Z low event
-    function setInt1ZlowEn_A(state) {
-        _setRegBit(_xm_addr, INT_GEN_1_REG, 4, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt 1 generation on Y high event
-    function setInt1YhighEn_A(state) {
-        _setRegBit(_xm_addr, INT_GEN_1_REG, 3, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt 1 generation on Y low event
-    function setInt1YlowEn_A(state) {
-        _setRegBit(_xm_addr, INT_GEN_1_REG, 2, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt 1 generation on X high event
-    function setInt1XhighEn_A(state) {
-        _setRegBit(_xm_addr, INT_GEN_1_REG, 1, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt 1 generation on X low event
-    function setInt1XlowEn_A(state) {
-        _setRegBit(_xm_addr, INT_GEN_1_REG, 0, state);
-    }
-    
+
     // -------------------------------------------------------------------------
     // set the accelerometer threshold value interrupt 1
     function setInt1Ths_A(ths) {
@@ -633,42 +606,6 @@ class LSM9DS0 {
     // duration steps and max values depend on selected ODR
     function setInt1Duration_A(duration) {
         _setReg(_xm_addr, INT_GEN_1_DURATION, duration & 0x7f);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt 2 generation on Z high event
-    function setInt2ZhighEn_A(state) {
-        _setRegBit(_xm_addr, INT_GEN_2_REG, 5, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt 2 generation on Z low event
-    function setInt2ZlowEn_A(state) {
-        _setRegBit(_xm_addr, INT_GEN_2_REG, 4, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt 2 generation on Y high event
-    function setInt2YhighEn_A(state) {
-        _setRegBit(_xm_addr, INT_GEN_2_REG, 3, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt 2 generation on Y low event
-    function setInt2YlowEn_A(state) {
-        _setRegBit(_xm_addr, INT_GEN_2_REG, 2, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt 2 generation on X high event
-    function setInt2XhighEn_A(state) {
-        _setRegBit(_xm_addr, INT_GEN_2_REG, 1, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable interrupt 2 generation on X low event
-    function setInt2XlowEn_A(state) {
-        _setRegBit(_xm_addr, INT_GEN_2_REG, 0, state);
     }
     
     // -------------------------------------------------------------------------
@@ -685,39 +622,25 @@ class LSM9DS0 {
     }
     
     // -------------------------------------------------------------------------
-    // enable / disable double-click detection on z-axis
-    function setDblclickIntEn_Z(state) {
-        _setRegBit(_xm_addr, CLICK_CFG, 5, state);
+    // enable / disable single-click detection
+    function setSnglclickIntEn(state) {
+        // bit 4 = Z axis
+        // bit 2 = Y axis
+        // bit 0 = X axis
+        local val = _getReg(_xm_addr, CLICK_CFG);
+        if (state) { val = val | 0x15; }
+        else { val & | 0xEA; }
     }
-    
+
     // -------------------------------------------------------------------------
-    // enable / disable single-click detection on z-axis
-    function setSnglclickIntEn_Z(state) {
-        _setRegBit(_xm_addr, CLICK_CFG, 4, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable / disable double-click detection on y-axis
-    function setDblclickIntEn_Y(state) {
-        _setRegBit(_xm_addr, CLICK_CFG, 3, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable / disable single-click detection on y-axis
-    function setSnglclickIntEn_Y(state) {
-        _setRegBit(_xm_addr, CLICK_CFG, 2, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable / disable double-click detection on x-axis
-    function setDblclickIntEn_X(state) {
-        _setRegBit(_xm_addr, CLICK_CFG, 1, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // enable / disable single-click detection on x-axis
-    function setSnglclickIntEn_X(state) {
-        _setRegBit(_xm_addr, CLICK_CFG, 0, state);
+    // enable / disable double-click detection
+    function setDblclickIntEn(state) {
+        // bit 5 = Z axis
+        // bit 3 = Y axis
+        // bit 1 = X axis
+        local val = _getReg(_xm_addr, CLICK_CFG);
+        if (state) { val = val | 0x2A; }
+        else { val & | 0xD5; }
     }
     
     // -------------------------------------------------------------------------
@@ -733,26 +656,6 @@ class LSM9DS0 {
     // -------------------------------------------------------------------------
     function snglclickDet() {
         return (0x10 & _getReg(_xm_addr, CLICK_SRC)); 
-    }
-    
-    // -------------------------------------------------------------------------
-    function clickNegDir() {
-        return (0x08 & _getReg(_xm_addr, CLICK_SRC)); 
-    }
-    
-    // -------------------------------------------------------------------------
-    function zclickDet() {
-        return (0x04 & _getReg(_xm_addr, CLICK_SRC)); 
-    }
-    
-    // -------------------------------------------------------------------------
-    function yclickDet() {
-        return (0x02 & _getReg(_xm_addr, CLICK_SRC)); 
-    }
-    
-    // -------------------------------------------------------------------------
-    function xclickDet() {
-        return (0x01 & _getReg(_xm_addr, CLICK_SRC)); 
     }
     
     // -------------------------------------------------------------------------

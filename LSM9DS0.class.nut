@@ -96,7 +96,7 @@ class LSM9DS0 {
     _temp_enabled = null;
     
     // -------------------------------------------------------------------------
-    constructor(i2c, xm_addr, g_addr) {
+    constructor(i2c, xm_addr = 0x3A, g_addr = 0xD4) {
         _i2c = i2c;
         _xm_addr = xm_addr;
         _g_addr = g_addr;
@@ -209,24 +209,6 @@ class LSM9DS0 {
     // Generate interrupt on data-ready
     function setIntDrdy_G(state) {
         _setRegBit(_g_addr, CTRL_REG3_G, 3, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // Generate interrupt on FIFO watermark
-    function setIntFifoWatermark_G(state) {
-        _setRegBit(_g_addr, CTRL_REG3_G, 2, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // Generate interrupt on FIFO overrun
-    function setIntFifoOverrun_G(state) {
-        _setRegBit(_g_addr, CTRL_REG3_G, 1, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // Generate interrupt on FIFO empty
-    function setIntFifoEmpty_G(state) {
-        _setRegBit(_g_addr, CTRL_REG3_G, 0, state);
     }
     
     // -------------------------------------------------------------------------
@@ -405,16 +387,6 @@ class LSM9DS0 {
     }
     
     // -------------------------------------------------------------------------
-    function setFifoEn_XM(state) {
-        _setRegBit(_xm_addr, CTRL_REG0_XM, 6, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    function setFifoWatermarkEn_XM(state) {
-        _setRegBit(_xm_addr, CTRL_REG0_XM, 5, state);
-    }
-    
-    // -------------------------------------------------------------------------
     // Enable/disable high-pass filter for click detection interrupt 
     function setHpfClick_XM(state) {
         _setRegBit(_xm_addr, CTRL_REG0_XM, 2, state);
@@ -540,12 +512,6 @@ class LSM9DS0 {
     }
     
     // -------------------------------------------------------------------------
-    // Enable FIFO Empty Interrupt INT1_XM
-    function setAccelDrdyIntEn_P1(state) {
-        _setRegBit(_xm_addr, CTRL_REG3_XM, 0, state);
-    }
-    
-    // -------------------------------------------------------------------------
     // Enable Interrupt Generation on INT2_XM on "tap" event
     function setTapIntEn_P2(state) {
         _setRegBit(_xm_addr, CTRL_REG4_XM, 7, state);
@@ -577,20 +543,8 @@ class LSM9DS0 {
     
     // -------------------------------------------------------------------------
     // Enable Magnetometer Data Ready Interrupt INT2_XM
-    function setMagDrdIntEn_p2(state) {
+    function setMagDrdyIntEn_p2(state) {
         _setRegBit(_xm_addr, CTRL_REG4_XM, 2, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // Enable FIFO Overrun Interrupt INT2_XM
-    function setAccelOvrRunIntEn_P2(state) {
-        _setRegBit(_xm_addr, CTRL_REG4_XM, 1, state);
-    }
-    
-    // -------------------------------------------------------------------------
-    // Enable FIFO Watermark Interupt INT2_XM
-    function setAccelWmrkIntEn_P2(state) {
-        _setRegBit(_xm_addr, CTRL_REG4_XM, 1, state);
     }
     
     // -------------------------------------------------------------------------

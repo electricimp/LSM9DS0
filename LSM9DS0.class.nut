@@ -434,14 +434,14 @@ class LSM9DS0 {
     // -------------------------------------------------------------------------
     // configure XM interrupt pins as Open-Drain
     // XM interrupt pins are push-pull by default
-    function setIntOpendrain_XM(state) {
+    function setIntOpendrain_XM() {
         _setRegBit(_xm_addr, INT_CTRL_REG_M, 4, 1);
     }
 
     // -------------------------------------------------------------------------
     // configure XM interrupt pins as Push-Pull
     // XM interrupt pins are push-pull by default
-    function setIntPushpull_XM(state) {
+    function setIntPushpull_XM() {
         _setRegBit(_xm_addr, INT_CTRL_REG_M, 4, 0);
     }    
     
@@ -704,12 +704,14 @@ class LSM9DS0 {
     // Enable Inertial Interrupt Generator 1 on INT2_XM
     function setInertInt1En_P2(state) {
         _setRegBit(_xm_addr, CTRL_REG4_XM, 6, state);
+        _setInertInt1AxesEn(state);
     }
     
     // -------------------------------------------------------------------------
     // Enable Inertial Interrupt Generator 2 on INT2_XM
     function setInertInt2En_P2(state) {
         _setRegBit(_xm_addr, CTRL_REG4_XM, 5, state);
+        _setInertInt2AxesEn(state);
     }
     
     // -------------------------------------------------------------------------
@@ -755,7 +757,7 @@ class LSM9DS0 {
     // set the range before setting the threshold
     function setInt1Ths_A(ths) {
         if (ths < 0) { ths = ths * -1.0; }
-        ths = (((ths * 1.0) / (RANGE_ACCEL * 1.0)) * 32000).tointeger();
+        ths = (((ths * 1.0) / (RANGE_ACCEL * 1.0)) * 127).tointeger();
         if (ths > 0xffff) { ths = 0xffff; }
         _setReg(_xm_addr,  INT_GEN_1_THS, (ths & 0x7f));
     }
@@ -775,7 +777,7 @@ class LSM9DS0 {
     // set the range before setting the threshold
     function setInt2Ths_A(ths) {
         if (ths < 0) { ths = ths * -1.0; }
-        ths = (((ths * 1.0) / (RANGE_ACCEL * 1.0)) * 32000).tointeger();
+        ths = (((ths * 1.0) / (RANGE_ACCEL * 1.0)) * 127).tointeger();
         if (ths > 0xffff) { ths = 0xffff; }
         _setReg(_xm_addr, INT_GEN_2_THS, (ths & 0x7f));
     }
@@ -795,7 +797,8 @@ class LSM9DS0 {
         // bit 0 = X axis
         local val = _getReg(_xm_addr, CLICK_CFG);
         if (state) { val = val | 0x15; }
-        else { val & | 0xEA; }
+        else { val & 0xEA; }
+        _setReg(_xm_addr, CLICK_CFG, val);
     }
 
     // -------------------------------------------------------------------------
@@ -806,7 +809,8 @@ class LSM9DS0 {
         // bit 1 = X axis
         local val = _getReg(_xm_addr, CLICK_CFG);
         if (state) { val = val | 0x2A; }
-        else { val & | 0xD5; }
+        else { val & 0xD5; }
+        _setReg(_xm_addr, CLICK_CFG, val)
     }
     
     // -------------------------------------------------------------------------
@@ -878,9 +882,9 @@ class LSM9DS0 {
         }
 
         // multiply by full-scale to return with units
-        result.x = result.x * RANGE_GYRO;
-        result.y = result.y * RANGE_GYRO;
-        result.z = result.z * RANGE_GYRO;
+        result.x = (result.x / 32000.0) * RANGE_GYRO;
+        result.y = (result.y / 32000.0) * RANGE_GYRO;
+        result.z = (result.z / 32000.0) * RANGE_GYRO;
         
         return result;
     }
@@ -913,9 +917,9 @@ class LSM9DS0 {
         }
 
         // multiply by full-scale range to return in gauss
-        result.x = result.x * RANGE_MAG;
-        result.y = result.y * RANGE_MAG;
-        result.z = result.z * RANGE_MAG;
+        result.x = (result.x / 32000.0) * RANGE_MAG;
+        result.y = (result.y / 32000.0) * RANGE_MAG;
+        result.z = (result.z / 32000.0) * RANGE_MAG;
         
         return result;
     }
@@ -950,9 +954,9 @@ class LSM9DS0 {
         }
 
         // multiply by full-scale range to return in G
-        result.x = result.x * RANGE_ACCEL
-        result.y = result.y * RANGE_ACCEL;
-        result.z = result.z * RANGE_ACCEL;
+        result.x = (result.x / 32000.0) * RANGE_ACCEL;
+        result.y = (result.y / 32000.0) * RANGE_ACCEL;
+        result.z = (result.z / 32000.0) * RANGE_ACCEL;
         
         return result;
     }

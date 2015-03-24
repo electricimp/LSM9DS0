@@ -585,19 +585,19 @@ class LSM9DS0 {
     // -------------------------------------------------------------------------
     // set the full-scale range of the accelerometer
     // default full-scale range is +/- 2 G
-    function setRange_A(range_g) {
+    function setRange_A(range_a) {
         local val = _getReg(_xm_addr, CTRL_REG2_XM) & 0xC7;
         local range_bits = 0;
-        if (range_g <= 2) {
+        if (range_a <= 2) {
             range_bits = 0x00;
             RANGE_ACCEL = 2;
-        } else if (range_g <= 4) {
+        } else if (range_a <= 4) {
             range_bits = 0x01;
             RANGE_ACCEL = 4;
-        } else if (range_g <= 6) {
+        } else if (range_a <= 6) {
             range_bits = 0x02;
             RANGE_ACCEL = 6;
-        } else if (range_g <= 8) {
+        } else if (range_a <= 8) {
             range_bits = 0x03;
             RANGE_ACCEL = 8;
         } else {
@@ -623,7 +623,7 @@ class LSM9DS0 {
         } else {
             RANGE_ACCEL = 16;
         }
-        return RANGE_MAG;
+        return RANGE_ACCEL;
     }
     
     // -------------------------------------------------------------------------

@@ -243,7 +243,19 @@ class LSM9DS0 {
 
     // -------------------------------------------------------------------------
     // set the gyro threshold values for interrupt
+    // threshold values are set in gauss. The provided value will be multiplied by 
+    // the current full-scale range to set the threshold register. Set full-scale range
+    // before setting thresholds.
     function setIntThs_G(x_ths, y_ths, z_ths) {
+        if (x_ths < 0) { x_ths = x_ths * -1.0; }
+        if (y_ths < 0) { y_ths = y_ths * -1.0; }
+        if (z_ths < 0) { z_ths = z_ths * -1.0; }
+        x_ths = x_ths * RANGE_ACCEL;
+        y_ths = y_ths * RANGE_ACCEL;
+        z_ths = z_ths * RANGE_ACCEL;
+        if (x_ths > 0xffff) { x_ths = 0xffff; }
+        if (y_ths > 0xffff) { y_ths = 0xffff; }
+        if (z_ths > 0xffff) { z_ths = 0xffff; }
         _setReg(_g_addr, INT1_THS_XH_G, (x_ths & 0xff00) >> 8);
         _setReg(_g_addr, INT1_THS_XL_G, (x_ths & 0xff));
         _setReg(_g_addr, INT1_THS_YH_G, (y_ths & 0xff00) >> 8);
@@ -474,7 +486,12 @@ class LSM9DS0 {
     
     // -------------------------------------------------------------------------
     // set the absolute value of the magnetometer interrupt threshold for all axes
+    // value is set in gauss. The value provided will be multiplied by the current full-scale range 
+    // to set the register. Set the full-scale range before setting thresholds.
     function setIntThs_M(val) {
+        if (val < 0) { val = val * -1.0; }
+        val = val * RANGE_MAG;
+        if (val > 0xffff) val = 0xffff;
         _setReg(_xm_addr, INT_THS_H_M, (val & 0xff00) << 8);
         _setReg(_xm_addr, INT_THS_L_M, (val & 0xff));
     }
@@ -732,7 +749,14 @@ class LSM9DS0 {
 
     // -------------------------------------------------------------------------
     // set the accelerometer threshold value interrupt 1
+    // threshold is set in G
+    // the provided threshold value is multiplied by the current accelerometer range to 
+    // calculate the value for the threshold register
+    // set the range before setting the threshold
     function setInt1Ths_A(ths) {
+        if (ths < 0) { ths = ths * -1.0; }
+        ths = ths * RANGE_ACCEL;
+        if (ths > 0xffff) { ths = 0xffff; }
         _setReg(_xm_addr,  INT_GEN_1_THS, (ths & 0x7f));
     }
     
@@ -745,7 +769,14 @@ class LSM9DS0 {
     
     // -------------------------------------------------------------------------
     // set the accelerometer threshold value interrupt 2
+    // threshold is set in G
+    // the provided threshold value is multiplied by the current accelerometer range to 
+    // calculate the value for the threshold register
+    // set the range before setting the threshold
     function setInt2Ths_A(ths) {
+        if (ths < 0) { ths = ths * -1.0; }
+        ths = ths * RANGE_ACCEL;
+        if (ths > 0xffff) { ths = 0xffff; }
         _setReg(_xm_addr, INT_GEN_2_THS, (ths & 0x7f));
     }
     
@@ -795,7 +826,14 @@ class LSM9DS0 {
     
     // -------------------------------------------------------------------------
     // set the click detection threshold
+    // threshold is set in G
+    // the provided threshold value is multiplied by the current accelerometer range to 
+    // calculate the value for the threshold register
+    // set the range before setting the threshold
     function setClickDetThs(ths) {
+        if (ths < 0) { ths = ths * -1.0; }
+        ths = ths * RANGE_ACCEL;
+        if (ths > 0xffff) { ths = 0xffff; }
         _setReg(_xm_addr, CLICK_THS, (ths & 0x7f));
     }
     

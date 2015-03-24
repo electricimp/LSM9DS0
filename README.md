@@ -227,10 +227,7 @@ Set the absolute value threshold for angular rate interrupts in each axis. Thesh
 // enable interrupt
 imu.setIntEnable_G(1);
 // set active-high
-imu.setIntActiveLow_G(0);
-// throw interrupt on angular rate over threshold in either direction
-imu.setIntZhighEn_G(1);
-imu.setIntZlowEn_G(1);
+imu.setIntActivehigh_G();
 // throw interrupt after just one sample is over threshold
 imu.setIntDuration_G(1);
 // set threshold to 125.5 degrees per second about Z
@@ -280,8 +277,8 @@ Enable/Disable Interrupt Generation from the Magnetometer. Pass in TRUE to enabl
 
 ```Squirrel
 imu.setIntEn_M(1);
-// enable interrupts on X axis
-imu.setIntEn_MX(1);
+// enable interrupts from magnetometer in all three axes
+imu.setIntEn_M(1);
 // route magnetometer interrupts to XM_INT1 pin
 imu.setMagIntEn_P1(1);
 ```
@@ -334,7 +331,7 @@ imu.setDatarate_M(50);
 // enable interrupt
 imu.setIntEn_M(1);
 // set active-high
-imu.setIntActiveLow_G(0);
+imu.setIntActivehigh_G();
 // throw interrupt on angular rate over threshold in either direction
 imu.setIntThs_M(16000);
 ```

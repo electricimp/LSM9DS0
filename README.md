@@ -22,7 +22,8 @@ The class’ constructor takes one required parameter (a configured imp I&sup2;C
 
 
 ```Squirrel
-i2c <- hardware.i2c89.configure(CLOCK_SPEED_400_KHZ);
+i2c <- hardware.i2c89;
+i2c.configure(CLOCK_SPEED_400_KHZ);
 imu <- LSM9DS0(i2c);
 ```
 
@@ -185,7 +186,7 @@ server.log("Y axis: " + accel.z)
 ```
 
 #### getTemp()
-Reads and returns the latest measurement from the temperature sensor in degrees Celsius.
+Reads and returns the latest measurement from the temperature sensor in degrees Celsius. Note that the on-chip temperature can differ from the ambient temperature by a significant amount. In bare-board tests, enabling the gyro increased the value returned by *getTemp()* by over 6 degrees Celsius. 
 
 ```Squirrel
 server.log(imu.getTemp() + "C")    // Log degrees Celsius

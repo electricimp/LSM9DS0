@@ -627,12 +627,6 @@ class LSM9DS0 {
         }
         return RANGE_MAG;
     }
-    
-    // -------------------------------------------------------------------------
-    // Enable Interrupt Generation on INT1_XM on "tap" event
-    function setTapIntEn_P1(state) {
-        _setRegBit(_xm_addr, CTRL_REG3_XM, 6, state);
-    }
 
     // -------------------------------------------------------------------------
     // Set high acceleration interrupt enable on all axes for generator 1

@@ -36,6 +36,8 @@ The LSM9DS0 comes out of reset with all functional blocks disabled. To read data
 imu.setPowerState_G(1);
 // Enable Accelerometer in all axes
 imu.setEnable_A(1);
+// Set the Accelerometer data rate to a nonzero value
+imu.setDatarate_A(10); // 10 Hz
 // Enable the Magnetometer by setting the ODR to a non-zero value
 imu.setDatarate_M(50); // 50 Hz
 imu.setModeCont_M(); // enable continuous measurement
@@ -111,10 +113,9 @@ imu.setIntDuration_G(1);
 
 #### Accelerometer / Magnetometer Interrupt
 
-The accelerometer and magnetometer can generate interrupts on a long list of configurable events. See the class methods list for more interrupt sources including tap detection, click detection, free-fall detection, and others.
+The accelerometer and magnetometer can generate interrupts on a long list of configurable events. See the class methods list for more interrupt sources including tap detection, click detection, and others.
 
 ```Squirrel
-// quality pun here
 function myAccelIntCallback() {
 	if (xm_int1.read()) {
 		server.log("Interrupt on XM_INT1");
@@ -128,15 +129,53 @@ xm_int1.configure(DIGITAL_IN, myAccelIntCallback);
 
 // Enable inertial interrupt generator 1 on all axes
 // Route inertial interrupt generator 1 to Interrupt Pin 1
+// enable interrupt 1 on over-threshold on any axis
 imu.setInertInt1En_P1(1);
 // active high
 imu.setIntActivehigh_XM();
 // latch
-imu.setIntLatch_XM(1);
-// enable interrupt 1 on over-threshold on any axis
+imu.setInt1Latch_XM(1);
+// throw interrupt after 1 sample over threshold
 imu.setInt1Duration_A(1);
 // set interrupt to +/- 1G
 imu.setInt1Ths_A(1.0);
+```
+
+#### Using the Accelerometer for Click Detection
+
+```Squirrel
+function xm_int1_cb() {
+    if (xm_int1.read()) {
+        if (imu.clickIntActive()) {
+            server.log("Click interrupt on XM_INT1");
+        } 
+    } else {
+        server.log("Interrupt on XM_INT1 Cleared");
+    }
+}
+
+xm_int1     <- hardware.pin2; // accel / magnetometer interrupt 1
+i2c         <- hardware.i2c89;
+
+i2c.configure(CLOCK_SPEED_400_KHZ);
+xm_int1.configure(DIGITAL_IN_PULLDOWN, xm_int1_cb);
+
+imu  <- LSM9DS0(i2c, XM_ADDR, G_ADDR);
+
+imu.setEnable_A(1);
+imu.setDatarate_A(100); // enable gyro at 100 Hz
+
+// set interrupt 1 polarity to active-high
+// accel/mag interrupts are push-pull by default
+imu.setIntActivehigh_XM();
+// enable latching on interrupt 1 only
+imu.setInt1LatchEn_XM(1);
+// enable single-click interrupts
+imu.setSnglclickIntEn_P1(1);
+// set click detection threshold to 1.5 g
+imu.setClickDetThs(1.5);
+// set click window to 16 ms
+imu.setClickTimeLimit(16);
 ```
 
 ## All Class Methods
@@ -409,7 +448,7 @@ Acclerometer axes can be enabled/disabled individually by extending this class.
 #### setDatarate_A(*rate_Hz*)
 Set the data rate for continuous measurements from the Accelerometer. The closest datarate greater than or equal to the requested rate will be selected. Supported datarates are 3.125 Hz, 6.25 Hz, 12.5 Hz, 25 Hz, 50 Hz, 100 Hz, 200 Hz, 400 Hz, 800 Hz, and 1600 Hz. 
 
-The device comes out of reset with the accelerometer disabled. The default data rate when the accelerometer is enabled is 3.125 Hz.
+The device comes out of reset with the accelerometer disabled. The default data rate when the accelerometer is enabled is 0 Hz; the data rate must be set to start continuous measurement with the accelerometer.
 
 #### setRange_A(*range_g*)
 Set the full-scale range for the acceleromter in *g*. Default full-scale range is +/- 2 *g*. The nearest available range less than or equal to the requested range will be selected. The selected range is returned. 
@@ -428,9 +467,6 @@ Returns the currently set full-scale range for the accelerometer in *g*.
 local range = getRange_A();
 server.log(format("Accelerometer full-scale range is +/- %d g", range));
 ```
-
-#### setTapIntEn_P1(*state*)
-Enable/Disable Tap Detection Interrupt on XM_INT1 Pin. Pass in TRUE to enable interrupts on Tap detect. 
 
 #### setInertInt1En_P1(*state*) 
 Enable/Disable inertial interrupt generator 1 on XM_INT1 Pin. Inertial interrupts will be thrown when acceleration values are over/under thresholds for their respective axes, if enabled.
@@ -494,23 +530,42 @@ Set the number of samples that must be measured over the threshold before throwi
 #### setTempEn(*state*)
 Enable/Disable onboard temperature sensor. Note that the temperature on-die may be several degrees different from ambient temperature. In bare-board testing, enabling the gyro increased the value returned by the on-die temperature sensor by over 6&deg;C.
 
-#### setSnglclickIntEn(*state*)
-Enable/Disable double-click interrupts. Single- and double-click interrupts can be enabled and disabled on each individual axis by extending this class. Click interrupts can be detected in each individual axis and direction by extending this class.
+#### setSnglclickIntEn_P1(*state*)
+Enable/Disable double-click interrupts on XM_INT1. Single- and double-click interrupts can be enabled and disabled on each individual axis by extending this class. Click interrupts can be detected in each individual axis and direction by extending this class.
 
-#### setDblclickIntEn(*state*)
-Enable/Disable double-click interrupts.
+To use any click detection interrupt, the click detection Time Limit and Threshold must be set. Time Limit refers to the window of time in which the acceleration value must exceed and then drop below the click threshold for a click event to be registered. Additionally, the datarate must be set sufficiently high to measure a transition above and below the click threshold within the time window. See "Using Interrupts" above for example code. 
+
+#### setDblclickIntEn_P1(*state*)
+Enable/Disable double-click interrupts on XM_INT1.
+
+To use double-click detection, the click detection Time Window and Threshold must be set, as well as the Time Latency and Time Window. Time Latency refers to the maximum time between the two click events, and Time Window refers to the maximum window of time in which two click events must be registered to register a double-click event. See "Using Interrupts" above for example code.
+
+#### setSnglclickIntEn_P2(*state*)
+Enable/Disable double-click interrupts on XM_INT2. Single- and double-click interrupts can be enabled and disabled on each individual axis by extending this class. Click interrupts can be detected in each individual axis and direction by extending this class.
+
+#### setDblclickIntEn_P2(*state*)
+Enable/Disable double-click interrupts on XM_INT2.
 
 #### setClickDetThs(*threshold*) 
 Set the Click Detection Threshold in *g*s. Threshold values are compared to the currently selected range of the sensor in order to calculate the appropriate value for the threshold registers. Set the sensor full-scale range before setting the interrupt threshold, if using a non-default range.
 
+#### setClickTimeLimit(*limit_ms*) 
+Set the time limit for a click event to be registered. A click event is a sudden acceleration followed by a sudden deceleration. The time limit refers to the window of time in which these events must occur to register a click event. This limit is given in milliseconds, and must be set in order to use single- or double-click detection.
+
+#### setClickTimeLatency(*latency_ms*)
+Set the minimum time between two click events to count as a double-click event. Choosing a time latency appropriately helps prevent vibration from registering as a double-click event. Time latency is given in milliseconds. This value is zero by default and must be set in order to use double-click detection.
+
+#### setClickTimeWindow(*window_ms*)
+Set the time window in which two click events must be registered in order to register a double-click event. The time window is given in milliseconds. This value is zero by default and must be set in order to use double-click detection. 
+
 #### clickIntActive()
-Returns TRUE if a click interrupt is active.
+Returns TRUE if a click interrupt is active. This function reads the CLICK_SRC register and will clear any latched click interrupts.
 
 #### snglclickDet()
-Returns TRUE if a single-click interrupt is active.
+Returns TRUE if a single-click interrupt is active. This function reads the CLICK_SRC register and will clear any latched click interrupts.
 
 #### dblclickDet()
-Returns TRUE if a double-click interrupt is active. 
+Returns TRUE if a double-click interrupt is active. This function reads the CLICK_SRC register and will clear any latched click interrupts.
 
 
 ## License

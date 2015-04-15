@@ -163,6 +163,8 @@ class LSM9DS0 {
         server.log(format("INT_GEN_1_REG: 0x%02X", _getReg(_xm_addr, INT_GEN_1_REG)));
         server.log(format("INT_GEN_1_THS: 0x%02X", _getReg(_xm_addr, INT_GEN_1_THS)));
         server.log(format("INT_GEN_1_DURATION: 0x%02X", _getReg(_xm_addr, INT_GEN_1_DURATION)));
+        server.log(format("CLICK_CFG: 0x%02X", _getReg(_xm_addr, CLICK_CFG)));
+        server.log(format("CLICK_SRC: 0x%02X", _getReg(_xm_addr, CLICK_SRC)));
     }
     
     // -------------------------------------------------------------------------
@@ -469,7 +471,7 @@ class LSM9DS0 {
     // -------------------------------------------------------------------------
     // read the interrupt source register to determine what caused an interrupt
     function getIntSrc_M() {
-        return _getReg(xm_addr, INT_SRC_REG_M);
+        return _getReg(_xm_addr, INT_SRC_REG_M);
     }
 
     // -------------------------------------------------------------------------
@@ -585,19 +587,19 @@ class LSM9DS0 {
     // -------------------------------------------------------------------------
     // set the full-scale range of the accelerometer
     // default full-scale range is +/- 2 G
-    function setRange_A(range_a) {
+    function setRange_A(range_g) {
         local val = _getReg(_xm_addr, CTRL_REG2_XM) & 0xC7;
         local range_bits = 0;
-        if (range_a <= 2) {
+        if (range_g <= 2) {
             range_bits = 0x00;
             RANGE_ACCEL = 2;
-        } else if (range_a <= 4) {
+        } else if (range_g <= 4) {
             range_bits = 0x01;
             RANGE_ACCEL = 4;
-        } else if (range_a <= 6) {
+        } else if (range_g <= 6) {
             range_bits = 0x02;
             RANGE_ACCEL = 6;
-        } else if (range_a <= 8) {
+        } else if (range_g <= 8) {
             range_bits = 0x03;
             RANGE_ACCEL = 8;
         } else {
@@ -625,15 +627,9 @@ class LSM9DS0 {
         }
         return RANGE_ACCEL;
     }
-    
-    // -------------------------------------------------------------------------
-    // Enable Interrupt Generation on INT1_XM on "tap" event
-    function setTapIntEn_P1(state) {
-        _setRegBit(_xm_addr, CTRL_REG3_XM, 6, state);
-    }
 
     // -------------------------------------------------------------------------
-    // Set inertial interrupt enable on all axes for generator 1
+    // Set high acceleration interrupt enable on all axes for generator 1
     function _setInertInt1AxesEn(state) {
         local val = _getReg(_xm_addr, INT_GEN_1_REG);
         // bit 5 = Z high
@@ -642,13 +638,13 @@ class LSM9DS0 {
         // bit 2 = Y low
         // bit 1 = X high
         // bit 0 = X low
-        if (state) { val = val | 0x3F; }
-        else { val = val & 0xC0; }
+        if (state) { val = val | 0x2A; }
+        else { val = val & 0xD3; }
         _setReg(_xm_addr, INT_GEN_1_REG, val);
     }
 
     // -------------------------------------------------------------------------
-    // Set inertial interrupt enable on all axes for generator 2
+    // Set high acceleration interrupt enable on all axes for generator 2
     function _setInertInt2AxesEn(state) {
         local val = _getReg(_xm_addr, INT_GEN_2_REG);
         // bit 5 = Z high
@@ -657,8 +653,8 @@ class LSM9DS0 {
         // bit 2 = Y low
         // bit 1 = X high
         // bit 0 = X low
-        if (state) { val = val | 0x3F; }
-        else { val = val & 0xC0; }
+        if (state) { val = val | 0x2A; }
+        else { val = val & 0xD3; }
         _setReg(_xm_addr, INT_GEN_2_REG, val);
     }
     
@@ -791,7 +787,7 @@ class LSM9DS0 {
     
     // -------------------------------------------------------------------------
     // enable / disable single-click detection
-    function setSnglclickIntEn(state) {
+    function _setSnglclickIntEn(state) {
         // bit 4 = Z axis
         // bit 2 = Y axis
         // bit 0 = X axis
@@ -799,18 +795,50 @@ class LSM9DS0 {
         if (state) { val = val | 0x15; }
         else { val & 0xEA; }
         _setReg(_xm_addr, CLICK_CFG, val);
+        // set single-click enable
+        _setRegBit(_xm_addr, CLICK_SRC, 4, state);
     }
 
     // -------------------------------------------------------------------------
     // enable / disable double-click detection
-    function setDblclickIntEn(state) {
+    function _setDblclickIntEn(state) {
         // bit 5 = Z axis
         // bit 3 = Y axis
         // bit 1 = X axis
         local val = _getReg(_xm_addr, CLICK_CFG);
         if (state) { val = val | 0x2A; }
         else { val & 0xD5; }
-        _setReg(_xm_addr, CLICK_CFG, val)
+        _setReg(_xm_addr, CLICK_CFG, val);
+        // set double-click enable
+        _setRegBit(_xm_addr, CLICK_SRC, 5, state);
+    }
+
+    // -------------------------------------------------------------------------
+    function setSnglclickIntEn_P1(state) {
+        _setSnglclickIntEn(state);
+        // route interrupt to XM_INT1 pin
+        _setRegBit(_xm_addr, CTRL_REG3_XM, 6, state);
+    }
+    
+    // -------------------------------------------------------------------------
+    function setSnglclickIntEn_P2(state) {
+        _setSnglclickIntEn(state);
+        // route interrupt to XM_INT2 pin
+        _setRegBit(_xm_addr, CTRL_REG4_XM, 6, state);
+    }
+    
+    // -------------------------------------------------------------------------
+    function setDblclickIntEn_P1(state) {
+        _setDblclickIntEn(state);
+        // route interrupt to XM_INT1 pin
+        _setRegBit(_xm_addr, CTRL_REG3_XM, 6, state);
+    }
+    
+    // -------------------------------------------------------------------------
+    function setDblclickIntEn_P2(state) {
+        _setDblclickIntEn(state);
+        // route interrupt to XM_INT2 pin
+        _setRegBit(_xm_addr, CTRL_REG4_XM, 6, state);
     }
     
     // -------------------------------------------------------------------------
@@ -836,9 +864,24 @@ class LSM9DS0 {
     // set the range before setting the threshold
     function setClickDetThs(ths) {
         if (ths < 0) { ths = ths * -1.0; }
-        ths = (((ths * 1.0) / (RANGE_ACCEL * 1.0)) * 32000).tointeger();
-        if (ths > 0xffff) { ths = 0xffff; }
+        ths = (((ths * 1.0) / (RANGE_ACCEL * 1.0)) * 127).tointeger();
+        if (ths > 0xff) { ths = 0xff; }
         _setReg(_xm_addr, CLICK_THS, (ths & 0x7f));
+    }
+    
+    // -------------------------------------------------------------------------
+    function setClickTimeLimit(limit) {
+        _setReg(_xm_addr, TIME_LIMIT, limit & 0xff);
+    }
+    
+    // -------------------------------------------------------------------------
+    function setClickTimeLatency(latency) {
+        _setReg(_xm_addr, TIME_LATENCY, latency & 0xff);
+    }
+    
+    // -------------------------------------------------------------------------
+    function setClickTimeWindow(window) {
+        _setReg(_xm_addr, TIME_WINDOW, window & 0xff);
     }
     
     // -------------------------------------------------------------------------

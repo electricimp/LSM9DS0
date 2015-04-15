@@ -625,7 +625,7 @@ class LSM9DS0 {
         } else {
             RANGE_ACCEL = 16;
         }
-        return RANGE_MAG;
+        return RANGE_ACCEL;
     }
 
     // -------------------------------------------------------------------------

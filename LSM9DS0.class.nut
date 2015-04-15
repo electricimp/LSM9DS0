@@ -803,8 +803,6 @@ class LSM9DS0 {
         _setReg(_xm_addr, CLICK_CFG, val);
         // set single-click enable
         _setRegBit(_xm_addr, CLICK_SRC, 4, state);
-        // enable High-Pass filter for click detection
-        //_setRegBit(_xm_addr, CTRL_REG0_XM, 2, state);
     }
 
     // -------------------------------------------------------------------------
@@ -819,8 +817,6 @@ class LSM9DS0 {
         _setReg(_xm_addr, CLICK_CFG, val);
         // set double-click enable
         _setRegBit(_xm_addr, CLICK_SRC, 5, state);
-        // enable high-pass filter
-        //_setRegBit(_xm_addr, CTRL_REG0_XM, 2, state);
     }
 
     // -------------------------------------------------------------------------

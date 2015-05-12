@@ -8,6 +8,8 @@ The LSM9DS0 can interface over I&sup2;C or SPI. This class addresses only I&sup2
 
 The LSM9DS0 has two separate I&sup2;C sub-addresses: one for the gyroscope and one for the accelerometer/magnetometer. Each functional block can be enabled or disabled separately.
 
+**To add this library to your project, add** `#require "LSM9DS0.class.nut:1.1.0"` **to the top of your device code**
+
 ## Class Usage
 
 ### Constructor

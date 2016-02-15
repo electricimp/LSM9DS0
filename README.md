@@ -8,7 +8,7 @@ The LSM9DS0 can interface over I&sup2;C or SPI. This class addresses only I&sup2
 
 The LSM9DS0 has two separate I&sup2;C sub-addresses: one for the gyroscope and one for the accelerometer/magnetometer. Each functional block can be enabled or disabled separately.
 
-**To add this library to your project, add** `#require "LSM9DS0.class.nut:1.1.0"` **to the top of your device code**
+**To add this library to your project, add** `#require "LSM9DS0.class.nut:1.1.1"` **to the top of your device code**
 
 ## Class Usage
 
@@ -19,7 +19,7 @@ The class’ constructor takes one required parameter (a configured imp I&sup2;C
 | Parameter     | Type         | Default | Description |
 | ------------- | ------------ | ------- | ----------- |
 | i2cBus        | hardware.i2c | N/A     | A pre-configured I&sup2;C bus |
-| i2cAccellAddr | byte         | 0x3A    | The I&sup2;C address of the accelerometer/magnetometer |
+| i2cAccellAddr | byte         | 0x3C    | The I&sup2;C address of the accelerometer/magnetometer |
 | i2cGyroAddr   | byte         | 0xD4    | The I&sup2;C address of the angular rate sensor ("gyro") |
 
 
@@ -162,7 +162,7 @@ i2c         <- hardware.i2c89;
 i2c.configure(CLOCK_SPEED_400_KHZ);
 xm_int1.configure(DIGITAL_IN_PULLDOWN, xm_int1_cb);
 
-imu  <- LSM9DS0(i2c, XM_ADDR, G_ADDR);
+imu  <- LSM9DS0(i2c);
 
 imu.setEnable_A(1);
 imu.setDatarate_A(100); // enable gyro at 100 Hz
@@ -223,7 +223,7 @@ Units are *g*s
 local accel = imu.getAccel()
 server.log("X axis: " + accel.x)
 server.log("Y axis: " + accel.y)
-server.log("Y axis: " + accel.z)
+server.log("Z axis: " + accel.z)
 ```
 
 #### getTemp()

@@ -109,6 +109,14 @@ class LSM9DS0 {
         
         _temp_enabled = false;
 
+        // check WHO_AM_I
+        if (getDeviceId_G() != 0xD4) {
+            throw "Gyro not found";
+        }
+        if (getDeviceId_XM() != 0x49) {
+            throw "XM Not found";
+        }
+
         init();
     }
 

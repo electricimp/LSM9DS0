@@ -100,7 +100,7 @@ class LSM9DS0 {
     _temp_enabled = null;
     
     // -------------------------------------------------------------------------
-    constructor(i2c, xm_addr = 0x3A, g_addr = 0xD4) {
+    constructor(i2c, xm_addr = 0x3C, g_addr = 0xD4) {
         _i2c = i2c;
         _xm_addr = xm_addr;
         _g_addr = g_addr;

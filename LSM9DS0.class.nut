@@ -7,6 +7,8 @@
 
 class LSM9DS0 {
     
+    static version = [1, 1, 1];
+    
     static WHO_AM_I_G       = 0x0F;
     static CTRL_REG1_G      = 0x20;
     static CTRL_REG2_G      = 0x21;

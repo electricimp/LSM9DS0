@@ -262,9 +262,9 @@ class LSM9DS0 {
         if (x_ths < 0) { x_ths = x_ths * -1.0; }
         if (y_ths < 0) { y_ths = y_ths * -1.0; }
         if (z_ths < 0) { z_ths = z_ths * -1.0; }
-        x_ths = (((x_ths * 1.0) / (RANGE_ACCEL * 1.0)) * 32000).tointeger();
-        y_ths = (((y_ths * 1.0) / (RANGE_ACCEL * 1.0)) * 32000).tointeger();
-        z_ths = (((z_ths * 1.0) / (RANGE_ACCEL * 1.0)) * 32000).tointeger();
+        x_ths = (((x_ths * 1.0) / (RANGE_GYRO * 1.0)) * 32000).tointeger();
+        y_ths = (((y_ths * 1.0) / (RANGE_GYRO * 1.0)) * 32000).tointeger();
+        z_ths = (((z_ths * 1.0) / (RANGE_GYRO * 1.0)) * 32000).tointeger();
         if (x_ths > 0xffff) { x_ths = 0xffff; }
         if (y_ths > 0xffff) { y_ths = 0xffff; }
         if (z_ths > 0xffff) { z_ths = 0xffff; }

@@ -26,12 +26,13 @@ The class’ constructor takes one required parameter (a configured imp I&sup2;C
 ```Squirrel
 i2c <- hardware.i2c89;
 i2c.configure(CLOCK_SPEED_400_KHZ);
-imu <- LSM9DS0(i2c);
+addr <- 0x3A; // i2c address for accel on 9dof tail rev2
+imu <- LSM9DS0(i2c, addr);
 ```
 
 ### Enabling and Reading Data
 
-The LSM9DS0 comes out of reset with all functional blocks disabled. To read data from any of the sensors, they must first be enabled. 
+The LSM9DS0 comes out of reset with all functional blocks disabled. To read data from any of the sensors, they must first be enabled.
 
 ```Squirrel
 // Enable the gyro in all axes
@@ -58,7 +59,7 @@ server.log(format("Temp: %dºC", imu.getTemp()));
 
 The LSM9DS0 has four interrupt lines:
 
-* G_DRDY: Data Ready on Gyro 
+* G_DRDY: Data Ready on Gyro
 * G_INT: Configurable Gyro Interrupt
 * XM_INT1: Configurable Accelerometer / Magnetometer Interrupt 1
 * XM_INT2: Configurable Accelerometer / Magnetometer Interrupt 2
@@ -74,11 +75,11 @@ function myGyroDrdyCallback() {
 	if (g_drdy.read()) {
 		server.log("Data Ready on Gyro");
 		// disable Gyro Data Ready
-		imu.setIntDrdy_G(0);
+		imu.setDrdyEnable_G(0);
 	}
 }
 
-g_drdy      <- hardware.pin5; // angular rate Data Ready
+g_drdy <- hardware.pin5; // angular rate Data Ready
 g_drdy.configure(DIGITAL_IN, myGyroDrdyCallback);
 
 // enable data ready line
@@ -150,7 +151,7 @@ function xm_int1_cb() {
     if (xm_int1.read()) {
         if (imu.clickIntActive()) {
             server.log("Click interrupt on XM_INT1");
-        } 
+        }
     } else {
         server.log("Interrupt on XM_INT1 Cleared");
     }
@@ -182,10 +183,10 @@ imu.setClickTimeLimit(16);
 
 ## All Class Methods
 
-### General 
+### General
 
 #### getGyro()
-Reads and returns the latest measurement from the gyro as a table: 
+Reads and returns the latest measurement from the gyro as a table:
 
 `{ x: <xData>, y: <yData>, z: <zData> }`
 
@@ -199,13 +200,13 @@ server.log("Y axis: " + gyro.z)
 ```
 
 #### getMag()
-Reads and returns the latest measurement from the magnetometer as a table: 
+Reads and returns the latest measurement from the magnetometer as a table:
 
 `{ x: <xData>, y: <yData>, z: <zData> }`
 
 Units are gauss.
 
-```Squirrel 
+```Squirrel
 local mag = imu.getMag();
 server.log("X axis: " + mag.x);
 server.log("Y axis: " + mag.y);
@@ -213,7 +214,7 @@ server.log("Y axis: " + mag.z);
 ```
 
 #### getAccel()
-Reads and returns the latest measurement from the accelerometer as a table: 
+Reads and returns the latest measurement from the accelerometer as a table:
 
 `{ x: <xData>, y: <yData>, z: <zData> }`
 
@@ -227,7 +228,7 @@ server.log("Z axis: " + accel.z)
 ```
 
 #### getTemp()
-Reads and returns the latest measurement from the temperature sensor in degrees Celsius. Note that the on-chip temperature can differ from the ambient temperature by a significant amount. In bare-board tests, enabling the gyro increased the value returned by *getTemp()* by over 6 degrees Celsius. 
+Reads and returns the latest measurement from the temperature sensor in degrees Celsius. Note that the on-chip temperature can differ from the ambient temperature by a significant amount. In bare-board tests, enabling the gyro increased the value returned by *getTemp()* by over 6 degrees Celsius.
 
 ```Squirrel
 server.log(imu.getTemp() + "C")    // Log degrees Celsius
@@ -246,7 +247,7 @@ server.log(format("Gyro Device ID: 0x%02X", imu.getDeviceId_G()));
 Set the power state for the entire angular rate sensor (all three axes at once). Pass in TRUE to enable the Gyro.
 
 #### setRange_G(*range_dps*)
-Set the full-scale range for the angular rate sensor in degrees per second. Default full-scale range is +/- 225 degrees per second. The nearest available range less than or equal to the requested range will be selected. The selected range is returned. 
+Set the full-scale range for the angular rate sensor in degrees per second. Default full-scale range is +/- 225 degrees per second. The nearest available range less than or equal to the requested range will be selected. The selected range is returned.
 
 Available ranges are 225, 500, 1000, and 2000 degrees per second.
 
@@ -274,12 +275,12 @@ Set G_INT line active active high. See example in "using interrupts" section abo
 G_INT is active-high by default.
 
 #### setIntOpendrain_G()
-Set G_INT line to open-drain drive. See example in "using interrupts" section above. 
+Set G_INT line to open-drain drive. See example in "using interrupts" section above.
 
 G_INT is push-pull by default.
 
 #### setIntPushpull_G()
-Set G_INT line to push-pull drive. See example in "using interrupts" section above. 
+Set G_INT line to push-pull drive. See example in "using interrupts" section above.
 
 G_INT is push-pull by default.
 
@@ -311,10 +312,10 @@ imu.setIntDuration_G(1);
 imu.setIntThs_G(0, 0, 90);
 ```
 
-#### getIntSrc_G() 
+#### getIntSrc_G()
 Returns the INT1_SRC_G register contents as an integer to allow the caller to determine why an interrupt was thrown. Reading INT1_SRC_G also clears any latched interrupts. See example in "using interrupts" section above.
 
-#### setHpfEn_G(*state*) 
+#### setHpfEn_G(*state*)
 Enable/Disable the internal High-Pass Filter on the Gyro. Pass in TRUE to enable the HPF.
 
 ### Accelerometer / Magnetometer
@@ -326,7 +327,7 @@ Returns the 1-byte device ID of the accelerometer/magnetometer (from the WHO_AM_
 server.log(format("Accel/Mag Device ID: 0x%02X", imu.getDeviceId_XM()));
 ```
 
-#### getStatus_M() 
+#### getStatus_M()
 Returns the 1-byte contents of the magnetometer's status register (STATUS_REG_M).
 
 ```Squirrel
@@ -339,20 +340,20 @@ Place the magnetometer in continuous-measurement mode. Magnetometer is disabled 
 ```Squirrel
 // take continuous measurements at 50 Hz
 imu.setModeCont_M();
-imu.setDatarate_M(50); 
+imu.setDatarate_M(50);
 ```
 
-#### setDatarate_M(*rate_Hz*) 
-Set the data rate for continuous measurements from the Magnetometer. The closest datarate greater than or equal to the requested rate will be selected. Supported datarates are 3.125 Hz, 6.25 Hz, 12.5 Hz, 25 Hz, 50 Hz, and 100 Hz. 
+#### setDatarate_M(*rate_Hz*)
+Set the data rate for continuous measurements from the Magnetometer. The closest datarate greater than or equal to the requested rate will be selected. Supported datarates are 3.125 Hz, 6.25 Hz, 12.5 Hz, 25 Hz, 50 Hz, and 100 Hz.
 
 #### setModeSingle_M()
 Place the magnetometer in single-conversion mode. Will take measurements only when requested.
 
 #### setModePowerDown_M()
-Place the magnetometer in power-down mode. 
+Place the magnetometer in power-down mode.
 
 #### setRange_M(*range_gauss*)
-Set the full-scale range for the magnetometer in gauss. Default full-scale range is +/- 4 gauss. The nearest available range less than or equal to the requested range will be selected. The selected range is returned. 
+Set the full-scale range for the magnetometer in gauss. Default full-scale range is +/- 4 gauss. The nearest available range less than or equal to the requested range will be selected. The selected range is returned.
 
 Available ranges are 2, 4, 8, and 12 gauss.
 
@@ -410,7 +411,7 @@ Set TRUE to latch interrupt requests for XM_INT1. To clear a latched interrupt, 
 Set TRUE to latch interrupt requests for XM_INT2. To clear a latched interrupt, call getInt2Src_XM();
 
 #### getIntSrc_M()
-Read the magnetometer's interrupt source register to determine what caused an interrupt. 
+Read the magnetometer's interrupt source register to determine what caused an interrupt.
 
 #### getInt1Src_XM()
 Returns the contents of the INT_GEN_1_SRC register as an integer and clears latched interrupts on XM_INT1.
@@ -440,7 +441,7 @@ Enable/Disable internal high-pass filter on click detection.
 Enable/Disable internal high-pass filter on inertial interrupt generator 1.
 
 #### setHpfInt2_XM(*state*)
-Enable/Disable internal high-pass filter on inertial interrupt generator 2. 
+Enable/Disable internal high-pass filter on inertial interrupt generator 2.
 
 #### setEnable_A(*state*)
 Enable/Disable the Accelerometer in all axes.
@@ -448,12 +449,12 @@ Enable/Disable the Accelerometer in all axes.
 Acclerometer axes can be enabled/disabled individually by extending this class.
 
 #### setDatarate_A(*rate_Hz*)
-Set the data rate for continuous measurements from the Accelerometer. The closest datarate greater than or equal to the requested rate will be selected. Supported datarates are 3.125 Hz, 6.25 Hz, 12.5 Hz, 25 Hz, 50 Hz, 100 Hz, 200 Hz, 400 Hz, 800 Hz, and 1600 Hz. 
+Set the data rate for continuous measurements from the Accelerometer. The closest datarate greater than or equal to the requested rate will be selected. Supported datarates are 3.125 Hz, 6.25 Hz, 12.5 Hz, 25 Hz, 50 Hz, 100 Hz, 200 Hz, 400 Hz, 800 Hz, and 1600 Hz.
 
 The device comes out of reset with the accelerometer disabled. The default data rate when the accelerometer is enabled is 0 Hz; the data rate must be set to start continuous measurement with the accelerometer.
 
 #### setRange_A(*range_g*)
-Set the full-scale range for the acceleromter in *g*. Default full-scale range is +/- 2 *g*. The nearest available range less than or equal to the requested range will be selected. The selected range is returned. 
+Set the full-scale range for the acceleromter in *g*. Default full-scale range is +/- 2 *g*. The nearest available range less than or equal to the requested range will be selected. The selected range is returned.
 
 Available ranges are 2, 4, 6, 8, and 16 *g*.
 
@@ -470,19 +471,19 @@ local range = getRange_A();
 server.log(format("Accelerometer full-scale range is +/- %d g", range));
 ```
 
-#### setInertInt1En_P1(*state*) 
+#### setInertInt1En_P1(*state*)
 Enable/Disable inertial interrupt generator 1 on XM_INT1 Pin. Inertial interrupts will be thrown when acceleration values are over/under thresholds for their respective axes, if enabled.
 
-Note that there are two seperate interrupt generators and two separate interrupt pins. Either generator can be routed to either pin. Generators are configured separately.  
+Note that there are two seperate interrupt generators and two separate interrupt pins. Either generator can be routed to either pin. Generators are configured separately.
 
 #### setInertInt2En_P1(*state*)
 Enable/Disable inertial interrupt generator 2 on XM_INT1 Pin.
 
 #### setMagIntEn_P1(*state*)
-Enable/Disable magnetometer interrupt generator in XM_INT1 Pin. 
+Enable/Disable magnetometer interrupt generator in XM_INT1 Pin.
 
 #### setAccelDrdyIntEn_P1(*state*)
-Enable/Disable accelerometer Data Ready Interrupts on XM_INT1 Pin. 
+Enable/Disable accelerometer Data Ready Interrupts on XM_INT1 Pin.
 
 #### setMagDrdyIntEn_P1(*state*)
 Enable/Disable magnetometer Data Ready Interrupts on XM_INT1 Pin.
@@ -491,21 +492,21 @@ Enable/Disable magnetometer Data Ready Interrupts on XM_INT1 Pin.
 Enable/Disable inertial interrupt generator 1 on XM_INT2 Pin.
 
 #### setInertInt2En_P2(*state*)
-Enable/Disable inertial interrupt generator 2 on XM_INT2 Pin. 
+Enable/Disable inertial interrupt generator 2 on XM_INT2 Pin.
 
 #### setMagIntEn_P2(*state*)
-Enable/Disable magnetometer interrupt on XM_INT2 Pin. 
+Enable/Disable magnetometer interrupt on XM_INT2 Pin.
 
 #### setAccelDrdyIntEn_P2(*state*)
-Enable/Disable interrupt on accelerometer data ready on XM_INT2 Pin. 
+Enable/Disable interrupt on accelerometer data ready on XM_INT2 Pin.
 
 #### setMagDrdyIntEn_P2(*state*)
-Enable/Disable interrupt on magnetometer data readon XM_INT2 Pin. 
+Enable/Disable interrupt on magnetometer data readon XM_INT2 Pin.
 
 #### getStatus_A()
 Returns the contents of STATUS_REG_A as an integer.
 
-#### setInt1Ths_A(*threshold*) 
+#### setInt1Ths_A(*threshold*)
 Set the absolute value threshold for inertial interrupt generator 1 in any axis. Thesholds are given in *g*s, and are compared to the currently selected range of the sensor in order to calculate the appropriate value for the threshold registers. Set the sensor full-scale range before setting the interrupt threshold, if using a non-default range.
 
 ```Squirrel
@@ -520,7 +521,7 @@ imu.setIntActivehigh_XM();
 imu.setInt1Ths_A(1.2);
 ```
 
-#### setInt2Ths_A(*threshold*) 
+#### setInt2Ths_A(*threshold*)
 Set the absolute value threshold for inertial interrupt generator 2 in any axis.
 
 #### setInt1Duration_A(*numsamples*)
@@ -535,7 +536,7 @@ Enable/Disable onboard temperature sensor. Note that the temperature on-die may 
 #### setSnglclickIntEn_P1(*state*)
 Enable/Disable double-click interrupts on XM_INT1. Single- and double-click interrupts can be enabled and disabled on each individual axis by extending this class. Click interrupts can be detected in each individual axis and direction by extending this class.
 
-To use any click detection interrupt, the click detection Time Limit and Threshold must be set. Time Limit refers to the window of time in which the acceleration value must exceed and then drop below the click threshold for a click event to be registered. Additionally, the datarate must be set sufficiently high to measure a transition above and below the click threshold within the time window. See "Using Interrupts" above for example code. 
+To use any click detection interrupt, the click detection Time Limit and Threshold must be set. Time Limit refers to the window of time in which the acceleration value must exceed and then drop below the click threshold for a click event to be registered. Additionally, the datarate must be set sufficiently high to measure a transition above and below the click threshold within the time window. See "Using Interrupts" above for example code.
 
 #### setDblclickIntEn_P1(*state*)
 Enable/Disable double-click interrupts on XM_INT1.
@@ -548,17 +549,17 @@ Enable/Disable double-click interrupts on XM_INT2. Single- and double-click inte
 #### setDblclickIntEn_P2(*state*)
 Enable/Disable double-click interrupts on XM_INT2.
 
-#### setClickDetThs(*threshold*) 
+#### setClickDetThs(*threshold*)
 Set the Click Detection Threshold in *g*s. Threshold values are compared to the currently selected range of the sensor in order to calculate the appropriate value for the threshold registers. Set the sensor full-scale range before setting the interrupt threshold, if using a non-default range.
 
-#### setClickTimeLimit(*limit_ms*) 
+#### setClickTimeLimit(*limit_ms*)
 Set the time limit for a click event to be registered. A click event is a sudden acceleration followed by a sudden deceleration. The time limit refers to the window of time in which these events must occur to register a click event. This limit is given in milliseconds, and must be set in order to use single- or double-click detection.
 
 #### setClickTimeLatency(*latency_ms*)
 Set the minimum time between two click events to count as a double-click event. Choosing a time latency appropriately helps prevent vibration from registering as a double-click event. Time latency is given in milliseconds. This value is zero by default and must be set in order to use double-click detection.
 
 #### setClickTimeWindow(*window_ms*)
-Set the time window in which two click events must be registered in order to register a double-click event. The time window is given in milliseconds. This value is zero by default and must be set in order to use double-click detection. 
+Set the time window in which two click events must be registered in order to register a double-click event. The time window is given in milliseconds. This value is zero by default and must be set in order to use double-click detection.
 
 #### clickIntActive()
 Returns TRUE if a click interrupt is active. This function reads the CLICK_SRC register and will clear any latched click interrupts.

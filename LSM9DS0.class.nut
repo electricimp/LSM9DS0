@@ -6,9 +6,9 @@
 // http://www.adafruit.com/datasheets/LSM9DS0.pdf
 
 class LSM9DS0 {
-    
+
     static version = [1, 1, 1];
-    
+
     static WHO_AM_I_G       = 0x0F;
     static CTRL_REG1_G      = 0x20;
     static CTRL_REG2_G      = 0x21;
@@ -90,7 +90,7 @@ class LSM9DS0 {
     static TIME_WINDOW      = 0x3D;
     static Act_THS          = 0x3E;
     static Act_DUR          = 0x3F;
-    
+
     _i2c        = null;
     _xm_addr    = null;
     _g_addr     = null;
@@ -98,15 +98,15 @@ class LSM9DS0 {
     RANGE_GYRO = null; // degrees per second
     RANGE_MAG = null; // gauss
     RANGE_ACCEL = null; // G
-    
+
     _temp_enabled = null;
-    
+
     // -------------------------------------------------------------------------
     constructor(i2c, xm_addr = 0x3C, g_addr = 0xD4) {
         _i2c = i2c;
         _xm_addr = xm_addr;
         _g_addr = g_addr;
-        
+
         _temp_enabled = false;
 
         // check WHO_AM_I
@@ -127,13 +127,13 @@ class LSM9DS0 {
         getRange_M(); // sets RANGE_MAG. Default +/- 4 gauss
         getRange_A(); // sets RANGE_ACCEL. Default +/- 2 G
     }
-    
+
     // -------------------------------------------------------------------------
     function _twosComp(value, mask) {
         value = ~(value & mask) + 1;
         return value & mask;
     }
-    
+
     // -------------------------------------------------------------------------
     function _getReg(addr, reg) {
         local val = _i2c.read(addr, format("%c", reg), 1);
@@ -143,12 +143,12 @@ class LSM9DS0 {
             return null;
         }
     }
-    
+
     // -------------------------------------------------------------------------
     function _setReg(addr, reg, val) {
-        _i2c.write(addr, format("%c%c", reg, (val & 0xff)));   
+        _i2c.write(addr, format("%c%c", reg, (val & 0xff)));
     }
-    
+
     // -------------------------------------------------------------------------
     function _setRegBit(addr, reg, bit, state) {
         local val = _getReg(addr, reg);
@@ -159,7 +159,7 @@ class LSM9DS0 {
         }
         _setReg(addr, reg, val);
     }
-    
+
     function dumpCtrlRegs() {
         server.log(format("CTRL_REG0: 0x%02X", _getReg(_xm_addr, CTRL_REG0_XM)));
         server.log(format("CTRL_REG1: 0x%02X", _getReg(_xm_addr, CTRL_REG1_XM)));
@@ -176,13 +176,13 @@ class LSM9DS0 {
         server.log(format("CLICK_CFG: 0x%02X", _getReg(_xm_addr, CLICK_CFG)));
         server.log(format("CLICK_SRC: 0x%02X", _getReg(_xm_addr, CLICK_SRC)));
     }
-    
+
     // -------------------------------------------------------------------------
     // Return Gyro Device ID (0xD4)
     function getDeviceId_G() {
         return _getReg(_g_addr, WHO_AM_I_G);
     }
-    
+
     // -------------------------------------------------------------------------
     // set power state of the gyro device
     // note that if individual axes were previously disabled, they still will be
@@ -234,7 +234,7 @@ class LSM9DS0 {
         }
         return RANGE_GYRO;
     }
-    
+
     // -------------------------------------------------------------------------
     // set high to enable interrupt generation from the gyro
     function setIntEnable_G(state) {
@@ -248,14 +248,14 @@ class LSM9DS0 {
         // bit 1 = X axis over threshold
         // bit 0 = X axis under negative threshold
         local val = _getReg(_g_addr, INT1_CFG_G);
-        if (state) { val = val | 0x3F; } 
+        if (state) { val = val | 0x3F; }
         else { val = val & 0xC0; }
         _setReg(_g_addr, INT1_CFG_G, val);
     }
 
     // -------------------------------------------------------------------------
     // set the gyro threshold values for interrupt
-    // threshold values are set in gauss. The provided value will be multiplied by 
+    // threshold values are set in gauss. The provided value will be multiplied by
     // the current full-scale range to set the threshold register. Set full-scale range
     // before setting thresholds.
     function setIntThs_G(x_ths, y_ths, z_ths) {
@@ -289,7 +289,7 @@ class LSM9DS0 {
     function setIntActivehigh_G() {
         _setRegBit(_g_addr, CTRL_REG3_G, 5, 0);
     }
-    
+
     // -------------------------------------------------------------------------
     // configure Gyro Interrupt as push-pull
     // interrupt is push-pull by default
@@ -303,7 +303,7 @@ class LSM9DS0 {
     function setIntPushpull_G() {
         _setRegBit(_g_addr, CTRL_REG3_G, 4, 1);
     }
-    
+
     // -------------------------------------------------------------------------
     // enable/disable interrupt latch for gyro interrupts
     function setIntLatchEn_G(state) {
@@ -316,37 +316,37 @@ class LSM9DS0 {
     function setDrdyEnable_G(state) {
         _setRegBit(_g_addr, CTRL_REG3_G, 3, state);
     }
-    
+
     // -------------------------------------------------------------------------
     // set number of over-threshold samples to count before throwing interrupt
     function setIntDuration_G(nsamples) {
         _setReg(_g_addr, INT1_DURATION_G, nsamples & 0xff);
     }
-    
+
     // -------------------------------------------------------------------------
     // read the interrupt source register to determine what caused an interrupt
     function getIntSrc_G() {
         return _getReg(_g_addr, INT1_SRC_G);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable/disable Gyro High-Pass Filter
     function setHpfEn_G(state) {
         _setRegBit(_g_addr, CTRL_REG5_G, 4, state);
     }
-    
+
     // -------------------------------------------------------------------------
     // Returns Accel/Magnetometer Device ID (0x49)
     function getDeviceId_XM() {
         return _getReg(_xm_addr, WHO_AM_I_XM);
     }
-    
+
     // -------------------------------------------------------------------------
     // read the magnetometer's status register
     function getStatus_M() {
         return _getReg(_xm_addr, STATUS_REG_M);
     }
-    
+
     // -------------------------------------------------------------------------
     // Put magnetometer into continuous-conversion mode
     // IMU comes up with magnetometer powered down
@@ -356,7 +356,7 @@ class LSM9DS0 {
         // 0b00 -> continuous conversion mode
         _setReg(_xm_addr, CTRL_REG7_XM, val);
     }
-    
+
     // -------------------------------------------------------------------------
     // Put magnetometer into single-conversion mode
     function setModeSingle_M() {
@@ -365,7 +365,7 @@ class LSM9DS0 {
         val = val | 0x01;
         _setReg(_xm_addr, CTRL_REG7_XM, val);
     }
-    
+
     // -------------------------------------------------------------------------
     // Put magnetometer into power-down mode
     function setModePowerdown_M() {
@@ -413,13 +413,13 @@ class LSM9DS0 {
         }
         return RANGE_MAG;
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable/disable interrupt generation from the magnetometer
     // controls all three axes together
     function setIntEn_M(state) {
         // INT_CTRL_REG_M
-        // bit 7 = X axis 
+        // bit 7 = X axis
         // bit 6 = Y axis
         // bit 5 = Z axis
         // bit 0 = global enable/disable
@@ -442,7 +442,7 @@ class LSM9DS0 {
     function setIntActivehigh_XM() {
         _setRegBit(_xm_addr, INT_CTRL_REG_M, 3, 1);
     }
-    
+
     // -------------------------------------------------------------------------
     // configure XM interrupt pins as Open-Drain
     // XM interrupt pins are push-pull by default
@@ -455,8 +455,8 @@ class LSM9DS0 {
     // XM interrupt pins are push-pull by default
     function setIntPushpull_XM() {
         _setRegBit(_xm_addr, INT_CTRL_REG_M, 4, 0);
-    }    
-    
+    }
+
     // -------------------------------------------------------------------------
     // enable/disable global interrupt latching for accel/magnetometer
     // if set, clear interrupt by reading INT_GEN_1_SRC, INT_GEN_2_SRC, AND INT_SRC_REG_M
@@ -477,7 +477,7 @@ class LSM9DS0 {
     function setInt2LatchEn_XM(state) {
         _setRegBit(_xm_addr, CTRL_REG5_XM, 1, state);
     }
-    
+
     // -------------------------------------------------------------------------
     // read the interrupt source register to determine what caused an interrupt
     function getIntSrc_M() {
@@ -489,16 +489,16 @@ class LSM9DS0 {
     function getInt1Src_XM() {
         return _getReg(_xm_addr, INT_GEN_1_SRC);
     }
-    
+
     // -------------------------------------------------------------------------
     // read the INT_GEN_2_SRC register to determine what threw an interrupt on generator 2
     function getInt2Src_XM() {
         return _getReg(_xm_addr, INT_GEN_2_SRC);
     }
-    
+
     // -------------------------------------------------------------------------
     // set the absolute value of the magnetometer interrupt threshold for all axes
-    // value is set in gauss. The value provided will be multiplied by the current full-scale range 
+    // value is set in gauss. The value provided will be multiplied by the current full-scale range
     // to set the register. Set the full-scale range before setting thresholds.
     function setIntThs_M(ths) {
         if (ths < 0) { ths = ths * -1.0; }
@@ -507,19 +507,19 @@ class LSM9DS0 {
         _setReg(_xm_addr, INT_THS_H_M, (ths & 0xff00) << 8);
         _setReg(_xm_addr, INT_THS_L_M, (ths & 0xff));
     }
-    
+
     // -------------------------------------------------------------------------
-    // Enable/disable high-pass filter for click detection interrupt 
+    // Enable/disable high-pass filter for click detection interrupt
     function setHpfClick_XM(state) {
         _setRegBit(_xm_addr, CTRL_REG0_XM, 2, state);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable/disable high-pass filter for interrupt generator 1
     function setHpfInt1_XM(state) {
         _setRegBit(_xm_addr, CTRL_REG0_XM, 1, state);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable/disable high-pass filter for interrupt generator 2
     function setHpfInt2_XM(state) {
@@ -534,20 +534,20 @@ class LSM9DS0 {
         if (rate <= 3.125) {
             // rate already set; 0x0
         } else if (rate <= 6.25) {
-            val = val | (0x01 << 3);
+            val = val | (0x01 << 2);
         } else if (rate <= 12.5) {
-            val = val | (0x02 << 3);
+            val = val | (0x02 << 2);
         } else if (rate <= 25) {
-            val = val | (0x03 << 3);
+            val = val | (0x03 << 2);
         } else if (rate <= 50) {
-            val = val | (0x04 << 3);
+            val = val | (0x04 << 2);
         } else {
             // rate = 100 Hz
-            val = val | (0x05 << 3);
-        } 
+            val = val | (0x05 << 2);
+        }
         _setReg(_xm_addr, CTRL_REG5_XM, val);
     }
-    
+
     // -------------------------------------------------------------------------
     // Set Accelerometer Data Rate in Hz
     // IMU comes up with accelerometer disabled; rate must be set to enable
@@ -557,7 +557,7 @@ class LSM9DS0 {
             // 0b0000 -> power-down mode
             // we've already ANDed-out the top 4 bits; just write back
         } else if (rate <= 3.125) {
-            val = val | 0x10; 
+            val = val | 0x10;
         } else if (rate <= 6.25) {
             val = val | 0x20;
         } else if (rate <= 12.5) {
@@ -667,77 +667,77 @@ class LSM9DS0 {
         else { val = val & 0xD3; }
         _setReg(_xm_addr, INT_GEN_2_REG, val);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable Inertial Interrupt Generator 1 on INT1_XM
     function setInertInt1En_P1(state) {
         _setRegBit(_xm_addr, CTRL_REG3_XM, 5, state);
         _setInertInt1AxesEn(state);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable Inertial Interrupt Generator 2 on INT1_XM
     function setInertInt2En_P1(state) {
         _setRegBit(_xm_addr, CTRL_REG3_XM, 4, state);
         _setInertInt2AxesEn(state);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable Magnetic Interrupt on INT1_XM
     function setMagIntEn_P1(state) {
         _setRegBit(_xm_addr, CTRL_REG3_XM, 3, state);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable Accel Data Ready Interrupt INT1_XM
     function setAccelDrdyIntEn_P1(state) {
         _setRegBit(_xm_addr, CTRL_REG3_XM, 2, state);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable Magnetometer Data Ready Interrupt INT1_XM
     function setMagDrdyIntEn_P1(state) {
         _setRegBit(_xm_addr, CTRL_REG3_XM, 1, state);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable Interrupt Generation on INT2_XM on "tap" event
     function setTapIntEn_P2(state) {
         _setRegBit(_xm_addr, CTRL_REG4_XM, 7, state);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable Inertial Interrupt Generator 1 on INT2_XM
     function setInertInt1En_P2(state) {
         _setRegBit(_xm_addr, CTRL_REG4_XM, 6, state);
         _setInertInt1AxesEn(state);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable Inertial Interrupt Generator 2 on INT2_XM
     function setInertInt2En_P2(state) {
         _setRegBit(_xm_addr, CTRL_REG4_XM, 5, state);
         _setInertInt2AxesEn(state);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable Magnetic Interrupt on INT2_XM
     function setMagIntEn_P2(state) {
         _setRegBit(_xm_addr, CTRL_REG4_XM, 4, state);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable Accel Data Ready Interrupt INT2_XM
     function setAccelDrdyIntEn_P2(state) {
         _setRegBit(_xm_addr, CTRL_REG4_XM, 3, state);
     }
-    
+
     // -------------------------------------------------------------------------
     // Enable Magnetometer Data Ready Interrupt INT2_XM
     function setMagDrdyIntEn_p2(state) {
         _setRegBit(_xm_addr, CTRL_REG4_XM, 2, state);
     }
-        
+
     // -------------------------------------------------------------------------
     // Enable temperature sensor
     function setTempEn(state) {
@@ -753,12 +753,12 @@ class LSM9DS0 {
     // read the accelerometer's status register
     function getStatus_A() {
         return _getReg(_xm_addr, STATUS_REG_A);
-    }    
+    }
 
     // -------------------------------------------------------------------------
     // set the accelerometer threshold value interrupt 1
     // threshold is set in G
-    // the provided threshold value is multiplied by the current accelerometer range to 
+    // the provided threshold value is multiplied by the current accelerometer range to
     // calculate the value for the threshold register
     // set the range before setting the threshold
     function setInt1Ths_A(ths) {
@@ -767,18 +767,18 @@ class LSM9DS0 {
         if (ths > 0xffff) { ths = 0xffff; }
         _setReg(_xm_addr,  INT_GEN_1_THS, (ths & 0x7f));
     }
-    
+
     // -------------------------------------------------------------------------
     // set the event duration over threshold before throwing interrupt
     // duration steps and max values depend on selected ODR
     function setInt1Duration_A(duration) {
         _setReg(_xm_addr, INT_GEN_1_DURATION, duration & 0x7f);
     }
-    
+
     // -------------------------------------------------------------------------
     // set the accelerometer threshold value interrupt 2
     // threshold is set in G
-    // the provided threshold value is multiplied by the current accelerometer range to 
+    // the provided threshold value is multiplied by the current accelerometer range to
     // calculate the value for the threshold register
     // set the range before setting the threshold
     function setInt2Ths_A(ths) {
@@ -787,14 +787,14 @@ class LSM9DS0 {
         if (ths > 0xffff) { ths = 0xffff; }
         _setReg(_xm_addr, INT_GEN_2_THS, (ths & 0x7f));
     }
-    
+
     // -------------------------------------------------------------------------
     // set the event duration over threshold before throwing interrupt
     // duration steps and max values depend on selected ODR
     function setInt2Duration_A(duration) {
         _setReg(_xm_addr, INT_GEN_2_DURATION, duration & 0x7f);
     }
-    
+
     // -------------------------------------------------------------------------
     // enable / disable single-click detection
     function _setSnglclickIntEn(state) {
@@ -829,47 +829,47 @@ class LSM9DS0 {
         // route interrupt to XM_INT1 pin
         _setRegBit(_xm_addr, CTRL_REG3_XM, 6, state);
     }
-    
+
     // -------------------------------------------------------------------------
     function setSnglclickIntEn_P2(state) {
         _setSnglclickIntEn(state);
         // route interrupt to XM_INT2 pin
         _setRegBit(_xm_addr, CTRL_REG4_XM, 6, state);
     }
-    
+
     // -------------------------------------------------------------------------
     function setDblclickIntEn_P1(state) {
         _setDblclickIntEn(state);
         // route interrupt to XM_INT1 pin
         _setRegBit(_xm_addr, CTRL_REG3_XM, 6, state);
     }
-    
+
     // -------------------------------------------------------------------------
     function setDblclickIntEn_P2(state) {
         _setDblclickIntEn(state);
         // route interrupt to XM_INT2 pin
         _setRegBit(_xm_addr, CTRL_REG4_XM, 6, state);
     }
-    
+
     // -------------------------------------------------------------------------
     function clickIntActive() {
-        return (0x40 & _getReg(_xm_addr, CLICK_SRC)); 
+        return (0x40 & _getReg(_xm_addr, CLICK_SRC));
     }
-    
+
     // -------------------------------------------------------------------------
     function dblclickDet() {
-        return (0x20 & _getReg(_xm_addr, CLICK_SRC)); 
+        return (0x20 & _getReg(_xm_addr, CLICK_SRC));
     }
-    
+
     // -------------------------------------------------------------------------
     function snglclickDet() {
-        return (0x10 & _getReg(_xm_addr, CLICK_SRC)); 
+        return (0x10 & _getReg(_xm_addr, CLICK_SRC));
     }
-    
+
     // -------------------------------------------------------------------------
     // set the click detection threshold
     // threshold is set in G
-    // the provided threshold value is multiplied by the current accelerometer range to 
+    // the provided threshold value is multiplied by the current accelerometer range to
     // calculate the value for the threshold register
     // set the range before setting the threshold
     function setClickDetThs(ths) {
@@ -878,22 +878,22 @@ class LSM9DS0 {
         if (ths > 0xff) { ths = 0xff; }
         _setReg(_xm_addr, CLICK_THS, (ths & 0x7f));
     }
-    
+
     // -------------------------------------------------------------------------
     function setClickTimeLimit(limit) {
         _setReg(_xm_addr, TIME_LIMIT, limit & 0xff);
     }
-    
+
     // -------------------------------------------------------------------------
     function setClickTimeLatency(latency) {
         _setReg(_xm_addr, TIME_LATENCY, latency & 0xff);
     }
-    
+
     // -------------------------------------------------------------------------
     function setClickTimeWindow(window) {
         _setReg(_xm_addr, TIME_WINDOW, window & 0xff);
     }
-    
+
     // -------------------------------------------------------------------------
     // read the internal temperature sensor in the accelerometer / magnetometer
     function getTemp() {
@@ -906,7 +906,7 @@ class LSM9DS0 {
             return temp;
         }
     }
-    
+
     // -------------------------------------------------------------------------
     // Read data from the Gyro
     // Returns a table {x: <data>, y: <data>, z: <data>}
@@ -914,20 +914,20 @@ class LSM9DS0 {
         local x_raw = (_getReg(_g_addr, OUT_X_H_G) << 8) + _getReg(_g_addr, OUT_X_L_G);
         local y_raw = (_getReg(_g_addr, OUT_Y_H_G) << 8) + _getReg(_g_addr, OUT_Y_L_G);
         local z_raw = (_getReg(_g_addr, OUT_Z_H_G) << 8) + _getReg(_g_addr, OUT_Z_L_G);
-        
+
         local result = {};
         if (x_raw & 0x8000) {
             result.x <- (-1.0) * _twosComp(x_raw, 0xffff);
         } else {
             result.x <- x_raw;
         }
-        
+
         if (y_raw & 0x8000) {
             result.y <- (-1.0) * _twosComp(y_raw, 0xffff);
         } else {
             result.y <- y_raw;
         }
-        
+
         if (z_raw & 0x8000) {
             result.z <- (-1.0) * _twosComp(z_raw, 0xffff);
         } else {
@@ -938,10 +938,10 @@ class LSM9DS0 {
         result.x = (result.x / 32000.0) * RANGE_GYRO;
         result.y = (result.y / 32000.0) * RANGE_GYRO;
         result.z = (result.z / 32000.0) * RANGE_GYRO;
-        
+
         return result;
     }
-    
+
     // -------------------------------------------------------------------------
     // Read data from the Magnetometer
     // Returns a table {x: <data>, y: <data>, z: <data>}
@@ -949,20 +949,20 @@ class LSM9DS0 {
         local x_raw = (_getReg(_xm_addr, OUT_X_H_M) << 8) + _getReg(_xm_addr, OUT_X_L_M);
         local y_raw = (_getReg(_xm_addr, OUT_Y_H_M) << 8) + _getReg(_xm_addr, OUT_Y_L_M);
         local z_raw = (_getReg(_xm_addr, OUT_Z_H_M) << 8) + _getReg(_xm_addr, OUT_Z_L_M);
-    
+
         local result = {};
         if (x_raw & 0x8000) {
             result.x <- (-1.0) * _twosComp(x_raw, 0xffff);
         } else {
             result.x <- x_raw;
         }
-        
+
         if (y_raw & 0x8000) {
             result.y <- (-1.0) * _twosComp(y_raw, 0xffff);
         } else {
             result.y <- y_raw;
         }
-        
+
         if (z_raw & 0x8000) {
             result.z <- (-1.0) * _twosComp(z_raw, 0xffff);
         } else {
@@ -973,10 +973,10 @@ class LSM9DS0 {
         result.x = (result.x / 32000.0) * RANGE_MAG;
         result.y = (result.y / 32000.0) * RANGE_MAG;
         result.z = (result.z / 32000.0) * RANGE_MAG;
-        
+
         return result;
     }
-    
+
     // -------------------------------------------------------------------------
     // Read data from the Accelerometer
     // Returns a table {x: <data>, y: <data>, z: <data>}
@@ -986,20 +986,20 @@ class LSM9DS0 {
         local z_raw = (_getReg(_xm_addr, OUT_Z_H_A) << 8) + _getReg(_xm_addr, OUT_Z_L_A);
 
         //server.log(format("%02X, %02X, %02X",x_raw, y_raw, z_raw));
-    
+
         local result = {};
         if (x_raw & 0x8000) {
             result.x <- (-1.0) * _twosComp(x_raw, 0xffff);
         } else {
             result.x <- x_raw;
         }
-        
+
         if (y_raw & 0x8000) {
             result.y <- (-1.0) * _twosComp(y_raw, 0xffff);
         } else {
             result.y <- y_raw;
         }
-        
+
         if (z_raw & 0x8000) {
             result.z <- (-1.0) * _twosComp(z_raw, 0xffff);
         } else {
@@ -1010,7 +1010,7 @@ class LSM9DS0 {
         result.x = (result.x / 32000.0) * RANGE_ACCEL;
         result.y = (result.y / 32000.0) * RANGE_ACCEL;
         result.z = (result.z / 32000.0) * RANGE_ACCEL;
-        
+
         return result;
     }
 
